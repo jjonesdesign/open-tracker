@@ -3,6 +3,9 @@
     package="jesse.jones.opentracker">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
 
     <application
         android:allowBackup="true"
@@ -18,6 +21,7 @@
 
             </intent-filter>
         </activity>
+        <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw"/>
     </application>
 
 </manifest>
