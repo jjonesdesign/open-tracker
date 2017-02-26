@@ -5,12 +5,12 @@ import android.content.Context;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.widget.Button;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -18,7 +18,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
@@ -28,7 +27,6 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
-import jesse.jones.opentracker.network.entity.Location;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -40,6 +38,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @BindView(R.id.updateLocationButton)
     FloatingActionButton mUpdateLocationButton;
 
+    @BindView(R.id.addActivityButton)
+    FloatingActionButton mAddActivityButton;
 
     GoogleMap mMap;
     GetGooglePlacesResponse mNewGoog;
@@ -53,13 +53,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     Boolean mMapReady = false;
 
+    //Location and Data Services
+    boolean mGpsEnabled = false;
+    boolean mNetworkEnabled = false;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
-
 
 
         SupportMapFragment mapFragment =
@@ -95,6 +98,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
 
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.options_menu, menu);
+        return true;
     }
 
     @Override
@@ -146,8 +156,59 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
         //Log.d("Latitude","status");
+        isGpsOn();
     }
 
+
+    //Click Handlers
+    @OnClick(R.id.updateLocationButton)
+    public void updateLocationButtonClicked(FloatingActionButton button) {
+        if(!mGpsEnabled){
+            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Find Location.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
+        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == 0){
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        }
+    }
+    @OnClick(R.id.addActivityButton)
+    public void addactivityButtonClicked(FloatingActionButton button) {
+        Toast.makeText(MainActivity.this, "Add Activity!", Toast.LENGTH_SHORT).show();
+    }
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
+        mLocation = latLng;
+        mMap.clear();
+        mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_refresh:
+                Toast.makeText(this, "Refresh selected", Toast.LENGTH_SHORT)
+                        .show();
+                break;
+            // action with ID action_settings was selected
+            case R.id.action_settings:
+                Toast.makeText(this, "Settings selected", Toast.LENGTH_SHORT)
+                        .show();
+                break;
+            default:
+                break;
+        }
+
+        return true;
+    }
+
+
+    //Math
     /** calculates the distance between two locations in MILES */
     private double distance(double lat1, double lng1, double lat2, double lng2) {
 
@@ -169,23 +230,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return dist; // output distance, in MILES
     }
 
+    //Services
+    public boolean isGpsOn(){
+        try {
+            mGpsEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch(Exception ex) {}
 
-
-    //Click Handlers
-    @OnClick(R.id.updateLocationButton)
-    public void updateLocationButtonClicked(FloatingActionButton button) {
-        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == 0){
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        }
+        return mGpsEnabled;
     }
 
-    @Override
-    public void onMapClick(LatLng latLng) {
-        Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
-        mLocation = latLng;
-        mMap.clear();
-        mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+    public boolean isDataOn(){
+        try {
+
+            mNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch(Exception ex) {}
+
+        return mNetworkEnabled;
+
     }
+
+
 }
