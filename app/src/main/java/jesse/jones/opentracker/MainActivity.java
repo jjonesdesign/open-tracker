@@ -5,12 +5,16 @@ import android.content.Context;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -33,7 +37,10 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener,GoogleMap.OnMapClickListener{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener {
+
+    @BindView(R.id.mainViewFrameLayout)
+    FrameLayout mContentViewArea;
 
     @BindView(R.id.updateLocationButton)
     FloatingActionButton mUpdateLocationButton;
@@ -76,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mPlacesService = mRetrofit.create(GooglePlacesService.class);
 
-        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces("-33.8670522,151.1957362","500","","food","AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
+        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces("-33.8670522,151.1957362", "500", "", "food", "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
 
         foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
             @Override
@@ -92,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         });
 
 
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == 0){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         }
@@ -110,9 +117,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
+        mMap.getUiSettings().setMyLocationButtonEnabled(true);
         mMap.setOnMapClickListener(this);
         mMapReady = true;
-
 
 
     }
@@ -131,8 +138,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onLocationChanged(android.location.Location location) {
         //txtLat.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
-        mLocation = new LatLng(location.getLatitude(),location.getLongitude());
-        if(mMapReady){
+        mLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        if (mMapReady) {
 
             Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
             mMap.clear();
@@ -142,8 +149,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
             mPreviousLocation = mLocation;
-            if(mLocationManager != null) {
-                if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == 0){
+            if (mLocationManager != null) {
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
                     mLocationManager.removeUpdates(this);
                 }
             }
@@ -160,22 +167,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    //Click Handlers
+    //====================== Click Handlers ======================
     @OnClick(R.id.updateLocationButton)
     public void updateLocationButtonClicked(FloatingActionButton button) {
-        if(!mGpsEnabled){
+        isGpsOn();
+        if (!mGpsEnabled) {
             Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Find Location.", Toast.LENGTH_LONG).show();
             return;
         }
 
         Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
-        if(ContextCompat.checkSelfPermission(this,Manifest.permission.ACCESS_FINE_LOCATION) == 0){
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         }
     }
+
     @OnClick(R.id.addActivityButton)
-    public void addactivityButtonClicked(FloatingActionButton button) {
-        Toast.makeText(MainActivity.this, "Add Activity!", Toast.LENGTH_SHORT).show();
+    public void addActivityButtonClicked(FloatingActionButton button) {
+        if (mLocation == null) {
+            Toast.makeText(MainActivity.this, "No Location Set, Add One Manually", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+//        replaceFragment(addActivityFragment, "Add Activity Fragment");
+
+        AddActivityFragment addActivityFragment = new AddActivityFragment();
+        Bundle bundle = new Bundle();
+        String locationString = mLocation.latitude + "," + mLocation.longitude;
+        bundle.putString("location",locationString);
+        addActivityFragment.setArguments(bundle);
+        addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
 
     @Override
@@ -183,6 +204,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
         mLocation = latLng;
         mMap.clear();
+
         mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
     }
@@ -191,8 +213,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
-            case R.id.action_refresh:
-                Toast.makeText(this, "Refresh selected", Toast.LENGTH_SHORT)
+            case R.id.action_goto_activities:
+                Toast.makeText(this, "Activities selected", Toast.LENGTH_SHORT)
                         .show();
                 break;
             // action with ID action_settings was selected
@@ -208,14 +230,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    //Math
-    /** calculates the distance between two locations in MILES */
+    //====================== Math ======================
+
+    /**
+     * calculates the distance between two locations in MILES
+     */
     private double distance(double lat1, double lng1, double lat2, double lng2) {
 
         double earthRadius = 3958.75; // in miles, change to 6371 for kilometer output
 
-        double dLat = Math.toRadians(lat2-lat1);
-        double dLng = Math.toRadians(lng2-lng1);
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLng = Math.toRadians(lng2 - lng1);
 
         double sindLat = Math.sin(dLat / 2);
         double sindLng = Math.sin(dLng / 2);
@@ -223,31 +248,48 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         double a = Math.pow(sindLat, 2) + Math.pow(sindLng, 2)
                 * Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2));
 
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
         double dist = earthRadius * c;
 
         return dist; // output distance, in MILES
     }
 
-    //Services
-    public boolean isGpsOn(){
+    // ====================== Services ======================
+    public boolean isGpsOn() {
         try {
             mGpsEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch(Exception ex) {}
+        } catch (Exception ex) {
+        }
 
         return mGpsEnabled;
     }
 
-    public boolean isDataOn(){
+    public boolean isDataOn() {
         try {
-
             mNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch(Exception ex) {}
+        } catch (Exception ex) {
+        }
 
         return mNetworkEnabled;
 
     }
 
+    //Fragments
+    public void replaceFragment(Fragment fragment, String descriptor) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.replace(mContentViewArea.getId(), fragment, descriptor);
+        ft.addToBackStack(null);
+        ft.commit();
+    }
+
+    public void addFragment(Fragment fragment, String descriptor) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.add(mContentViewArea.getId(), fragment, descriptor);
+        ft.addToBackStack(null);
+        ft.commit();
+    }
 
 }

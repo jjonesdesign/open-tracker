@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/addActivityLayoutBackground"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/white"
+    android:clickable="true">
+
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar3"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
+        android:minHeight="?attr/actionBarSize"
+        android:theme="?attr/actionBarTheme">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="72dp"
+                android:layout_height="wrap_content"
+                android:src="@android:drawable/ic_delete"
+                android:tint="@android:color/white"
+                android:scaleType="fitStart"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:text="Add New Activity"
+                android:layout_weight="1"
+                android:textSize="20sp"
+                android:gravity="left|center_vertical"/>
+
+            <ImageView
+                android:layout_width="40dp"
+                android:layout_height="match_parent"
+                android:src="@android:drawable/ic_menu_save"
+                android:tint="@android:color/white"
+                android:layout_marginRight="16dp"/>
+        </LinearLayout>
+
+    </android.support.v7.widget.Toolbar>
+
+    <EditText
+        android:id="@+id/activity_name_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/toolbar3"
+        android:ems="10"
+        android:inputType="text"
+        android:layout_margin="8dp"
+        android:hint="Activity Name" />
+
+    <EditText
+        android:id="@+id/activity_description_input"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/activity_name_input"
+        android:layout_marginTop="34dp"
+        android:ems="10"
+        android:gravity="top"
+        android:inputType="textMultiLine"
+        android:layout_margin="8dp"
+        android:hint="Activity Description" />
+
+    <TextView
+        android:id="@+id/locationNameDisplay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/activity_description_input"
+        android:layout_marginTop="13dp"
+        android:padding="5dp"
+        android:text="City Name"/>
+
+
+</RelativeLayout>
