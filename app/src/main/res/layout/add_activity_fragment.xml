@@ -32,12 +32,13 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
-                android:text="Add New Activity"
+                android:text="@string/title_add_new_activity"
                 android:layout_weight="1"
                 android:textSize="20sp"
                 android:gravity="left|center_vertical"/>
 
             <ImageView
+                android:id="@+id/createActivityButton"
                 android:layout_width="40dp"
                 android:layout_height="match_parent"
                 android:src="@android:drawable/ic_menu_save"
@@ -55,7 +56,7 @@
         android:ems="10"
         android:inputType="text"
         android:layout_margin="8dp"
-        android:hint="Activity Name" />
+        android:hint="@string/input_activity_name" />
 
     <EditText
         android:id="@+id/activity_description_input"
@@ -69,7 +70,7 @@
         android:gravity="top"
         android:inputType="textMultiLine"
         android:layout_margin="8dp"
-        android:hint="Activity Description" />
+        android:hint="@string/input_description" />
 
     <TextView
         android:id="@+id/locationNameDisplay"
@@ -80,7 +81,7 @@
         android:layout_below="@+id/activity_description_input"
         android:layout_marginTop="13dp"
         android:padding="5dp"
-        android:text="City Name"/>
+        android:text="@string/display_location_name"/>
 
 
 </RelativeLayout>

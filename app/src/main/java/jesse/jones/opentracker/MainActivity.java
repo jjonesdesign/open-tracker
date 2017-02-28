@@ -187,6 +187,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Bundle bundle = new Bundle();
         String locationString = mLocation.latitude + "," + mLocation.longitude;
         bundle.putString("location",locationString);
+        bundle.putString("latitude",String.valueOf(mLocation.latitude));
+        bundle.putString("longitude",String.valueOf(mLocation.longitude));
         addActivityFragment.setArguments(bundle);
         addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
@@ -220,8 +222,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.action_goto_activities:
-                Toast.makeText(this, "Activities selected", Toast.LENGTH_SHORT)
-                        .show();
+                ListActivitiesFragment listActivitiesFragment = new ListActivitiesFragment();
+                Bundle bundle = new Bundle();
+                listActivitiesFragment.setArguments(bundle);
+                listActivitiesFragment.show(getSupportFragmentManager(), listActivitiesFragment.getClass().getSimpleName());
                 break;
             // action with ID action_settings was selected
             case R.id.action_settings:

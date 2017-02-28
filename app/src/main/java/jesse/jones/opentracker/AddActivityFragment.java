@@ -15,12 +15,15 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -30,6 +33,9 @@ import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.AddressComponent;
 import jesse.jones.opentracker.network.entity.GetGoogleLocationNameResponse;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
+import jesse.jones.opentracker.network.entity.LocationNameResult;
+import jesse.jones.opentracker.utils.DatabaseHelper;
+import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -49,10 +55,23 @@ public class AddActivityFragment extends DialogFragment {
     @BindView(R.id.closeAddActivityButton)
     ImageView mCloseDialogButton;
 
+    @BindView(R.id.createActivityButton)
+    ImageView mCreateActivityButton;
+
+    @BindView(R.id.activity_name_input)
+    EditText mActivityNameInput;
+
+    @BindView(R.id.activity_description_input)
+    EditText mActivityDesriptionInput;
+
     Retrofit mRetrofit;
     GoogleCityNameService mGoogleCityNameService;
 
     String mLocationCords;
+    String mLatitude;
+    String mLongitude;
+
+    DatabaseHelper mDatabaseHelper;
 
     public static AddActivityFragment getInstance() {
 
@@ -81,7 +100,10 @@ public class AddActivityFragment extends DialogFragment {
                 .build();
 
         mLocationCords = getArguments().getString("location");
+        mLatitude = getArguments().getString("latitude");
+        mLongitude = getArguments().getString("longitude");
 
+        mDatabaseHelper = new DatabaseHelper(getContext());
 
         return view;
     }
@@ -98,12 +120,22 @@ public class AddActivityFragment extends DialogFragment {
 
             @Override
             public void onResponse(Call<GetGoogleLocationNameResponse> call, Response<GetGoogleLocationNameResponse> response) {
-                String zip = response.body().getResults().get(0).getAddressComponents().get(7).getLongName();
-                String city = response.body().getResults().get(0).getAddressComponents().get(3).getLongName();
-                String state = response.body().getResults().get(0).getAddressComponents().get(5).getShortName();
-                String country = response.body().getResults().get(0).getAddressComponents().get(6).getShortName();
+                GetGoogleLocationNameResponse responseBody = response.body();
+                List<LocationNameResult> LocationNameResults = responseBody.getResults();
+                String formattedAddress = "";
 
-                mLocationNameDisplay.setText(city + " " + state + " " + zip + ", " + country);
+                for(int i=0; i < LocationNameResults.size();i++){
+                    LocationNameResult locationNameResult = LocationNameResults.get(i);
+                    formattedAddress += locationNameResult.getFormattedAddress();
+
+                }
+
+                //String zip = response.body().getResults().get(0).getAddressComponents().get(7).getLongName();
+                //String city = response.body().getResults().get(0).getAddressComponents().get(3).getLongName();
+                //String state = response.body().getResults().get(0).getAddressComponents().get(5).getShortName();
+                //String country = response.body().getResults().get(0).getAddressComponents().get(6).getShortName();
+                //mLocationNameDisplay.setText(city + " " + state + " " + zip + ", " + country);
+                mLocationNameDisplay.setText(formattedAddress);
 
             }
 
@@ -121,4 +153,23 @@ public class AddActivityFragment extends DialogFragment {
         this.dismiss();
     }
 
+    @OnClick(R.id.createActivityButton)
+    public void addActivityButtonClicked(ImageView imageView) {
+
+
+        ActivityEntry newActivityEntry = new ActivityEntry();
+        newActivityEntry.setName(mActivityNameInput.getText().toString());
+        newActivityEntry.setDescription(mActivityDesriptionInput.getText().toString());
+        newActivityEntry.setLatitude(mLatitude);
+        newActivityEntry.setLongitude(mLongitude);
+        newActivityEntry.setStatus(1);
+
+        long results = mDatabaseHelper.createActivityEntry(newActivityEntry);
+
+        Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+
+        mActivityNameInput.setText("");
+        mActivityDesriptionInput.setText("");
+
+    }
 }

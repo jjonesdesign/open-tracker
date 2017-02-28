@@ -3,10 +3,10 @@
     <item
         android:id="@+id/action_goto_activities"
         android:orderInCategory="100"
-        android:title="Activities"/>
+        android:title="@string/menu_option_activities"/>
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="200"
-        android:title="Settings">
+        android:title="@string/menu_option_settings">
     </item>
 </menu>
