@@ -31,13 +31,14 @@ import butterknife.ButterKnife;
 import butterknife.OnClick;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
+import jesse.jones.opentracker.network.entity.Location;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener {
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
@@ -117,8 +118,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
-        mMap.getUiSettings().setMyLocationButtonEnabled(true);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
+            mMap.setMyLocationEnabled(true);
+        }
+
+        android.location.Location lastLocation = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if(lastLocation != null) {
+            LatLng lastLatLng = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
+            mLocation = lastLatLng;
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
+            mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+        }
         mMap.setOnMapClickListener(this);
+        mMap.setOnMyLocationButtonClickListener(this);
         mMapReady = true;
 
 
@@ -139,14 +151,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLocationChanged(android.location.Location location) {
         //txtLat.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
         mLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        if (mMapReady) {
+        Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
 
-            Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
+        if (mMapReady) {
             mMap.clear();
             mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
             mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
             mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
-
 
             mPreviousLocation = mLocation;
             if (mLocationManager != null) {
@@ -154,10 +165,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     mLocationManager.removeUpdates(this);
                 }
             }
-
         }
-
-
     }
 
     @Override
@@ -168,28 +176,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     //====================== Click Handlers ======================
-    @OnClick(R.id.updateLocationButton)
-    public void updateLocationButtonClicked(FloatingActionButton button) {
-        isGpsOn();
-        if (!mGpsEnabled) {
-            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Find Location.", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-        }
-    }
-
     @OnClick(R.id.addActivityButton)
     public void addActivityButtonClicked(FloatingActionButton button) {
         if (mLocation == null) {
             Toast.makeText(MainActivity.this, "No Location Set, Add One Manually", Toast.LENGTH_SHORT).show();
             return;
         }
-
-//        replaceFragment(addActivityFragment, "Add Activity Fragment");
 
         AddActivityFragment addActivityFragment = new AddActivityFragment();
         Bundle bundle = new Bundle();
@@ -208,7 +200,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
     }
+    @Override
+    public boolean onMyLocationButtonClick() {
+        isGpsOn();
+        if (!mGpsEnabled) {
+            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
+            return false;
+        }
 
+        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+        }
+        return false;
+    }
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
@@ -291,5 +297,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ft.addToBackStack(null);
         ft.commit();
     }
+
 
 }

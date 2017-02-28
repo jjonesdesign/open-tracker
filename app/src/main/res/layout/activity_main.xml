@@ -42,7 +42,8 @@
                 android:layout_alignParentLeft="true"
                 android:layout_margin="16dp"
                 android:src="@android:drawable/btn_radio"
-                android:tint="@android:color/white"/>
+                android:tint="@android:color/white"
+                android:visibility="invisible"/>
         </RelativeLayout>
 
     </FrameLayout>

@@ -1,17 +1,21 @@
 package jesse.jones.opentracker;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
+import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -41,6 +45,9 @@ public class AddActivityFragment extends DialogFragment {
 
     @BindView(R.id.locationNameDisplay)
     TextView mLocationNameDisplay;
+
+    @BindView(R.id.closeAddActivityButton)
+    ImageView mCloseDialogButton;
 
     Retrofit mRetrofit;
     GoogleCityNameService mGoogleCityNameService;
@@ -109,6 +116,9 @@ public class AddActivityFragment extends DialogFragment {
         super.onViewCreated(view, savedInstanceState);
     }
 
-
+    @OnClick(R.id.closeAddActivityButton)
+    public void closeDialogButtonClicked(ImageView imageView) {
+        this.dismiss();
+    }
 
 }
