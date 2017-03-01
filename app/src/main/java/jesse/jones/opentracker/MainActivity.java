@@ -2,6 +2,7 @@ package jesse.jones.opentracker;
 
 import android.Manifest;
 import android.content.Context;
+import android.inputmethodservice.InputMethodService;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
@@ -11,10 +12,14 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -38,7 +43,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,TextView.OnEditorActionListener {
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
@@ -48,6 +53,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @BindView(R.id.addActivityButton)
     FloatingActionButton mAddActivityButton;
+
+    @BindView(R.id.searchTextInput)
+    EditText mSearchTextInput;
 
     GoogleMap mMap;
     GetGooglePlacesResponse mNewGoog;
@@ -65,6 +73,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean mGpsEnabled = false;
     boolean mNetworkEnabled = false;
 
+    InputMethodManager mInputMethodManager;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -72,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        mSearchTextInput.setOnEditorActionListener(this);
+        mInputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -195,6 +207,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapClick(LatLng latLng) {
+        if(mInputMethodManager.isAcceptingText()){
+            mInputMethodManager.hideSoftInputFromWindow(mSearchTextInput.getRootView().getWindowToken(), 0);
+            return;
+        }
+
         Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
         mLocation = latLng;
         mMap.clear();
@@ -205,7 +222,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onMyLocationButtonClick() {
         isGpsOn();
+
         if (!mGpsEnabled) {
+            if(mLocation != null){
+                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+            }
             Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
             return false;
         }
@@ -303,4 +325,19 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
+    //====================== Search ======================
+    @Override
+    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+        //If the keyevent is a key-down event on the "enter" button
+        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+            mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
+            mSearchTextInput.clearFocus();
+
+
+            mInputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
+
+            return true;
+        }
+        return false;
+    }
 }
