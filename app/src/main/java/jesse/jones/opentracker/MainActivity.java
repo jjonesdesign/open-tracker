@@ -26,24 +26,32 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import jesse.jones.opentracker.interfaces.NewActivityAdded;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import jesse.jones.opentracker.network.entity.Location;
+import jesse.jones.opentracker.network.entity.Result;
+import jesse.jones.opentracker.utils.DatabaseHelper;
+import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,TextView.OnEditorActionListener {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener,TextView.OnEditorActionListener, NewActivityAdded{
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
@@ -64,8 +72,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     LatLng mLocation;
     LatLng mPreviousLocation;
-    ArrayList<LatLng> mLocationArray;
+    List<Result> mLocationResultsArray;
     LocationManager mLocationManager;
+
+    DatabaseHelper mDatabaseHelper;
+    List<ActivityEntry> mActivityLocations;
 
     Boolean mMapReady = false;
 
@@ -83,6 +94,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         ButterKnife.bind(this);
 
         mSearchTextInput.setOnEditorActionListener(this);
+        mLocationResultsArray = new ArrayList<Result>();
+
         mInputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 
         SupportMapFragment mapFragment =
@@ -96,20 +109,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mPlacesService = mRetrofit.create(GooglePlacesService.class);
 
-        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces("-33.8670522,151.1957362", "500", "", "food", "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
-
-        foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
-            @Override
-            public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
-                Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
-
-            }
-
-            @Override
-            public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
-                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+        mDatabaseHelper = new DatabaseHelper(getBaseContext());
+        mActivityLocations = new ArrayList<ActivityEntry>();
+        mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
 
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
@@ -127,6 +129,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
+    //====================== Map & Data Providers ======================
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
@@ -143,8 +146,48 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         mMap.setOnMapClickListener(this);
         mMap.setOnMyLocationButtonClickListener(this);
+        mMap.setOnMarkerClickListener(this);
         mMapReady = true;
 
+        rebuildMap();
+
+
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        marker.showInfoWindow();
+
+        return true;
+    }
+
+    public void rebuildMap(){
+        mMap.clear();
+
+        for(int i=0; i < mLocationResultsArray.size(); i++){
+            Result newRespone = mLocationResultsArray.get(i);
+
+            MarkerOptions aNewMarker = new MarkerOptions();
+            aNewMarker.title(newRespone.getName().toString());
+            aNewMarker.position(new LatLng(newRespone.getGeometry().getLocation().getLat(),newRespone.getGeometry().getLocation().getLng()));
+            aNewMarker.snippet(newRespone.getName().toString());
+
+            mMap.addMarker(aNewMarker);
+        }
+
+        for(int i=0; i < mActivityLocations.size(); i++){
+            ActivityEntry aActivityEntry = mActivityLocations.get(i);
+
+            MarkerOptions aNewMarker = new MarkerOptions();
+            aNewMarker.title(aActivityEntry.getName().toString());
+            aNewMarker.position(new LatLng(new Double(aActivityEntry.getLatitude()),new Double(aActivityEntry.getLongitude())));
+            aNewMarker.snippet(aActivityEntry.getDescription().toString());
+
+
+            aNewMarker.icon(BitmapDescriptorFactory.fromResource(R.mipmap.arrows));
+
+            mMap.addMarker(aNewMarker);
+        }
 
     }
 
@@ -166,10 +209,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
 
         if (mMapReady) {
-            mMap.clear();
-            mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
-            mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-            mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+
 
             mPreviousLocation = mLocation;
             if (mLocationManager != null) {
@@ -186,6 +226,24 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         isGpsOn();
     }
 
+    public boolean isGpsOn() {
+        try {
+            mGpsEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        } catch (Exception ex) {
+        }
+
+        return mGpsEnabled;
+    }
+
+    public boolean isDataOn() {
+        try {
+            mNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
+        } catch (Exception ex) {
+        }
+
+        return mNetworkEnabled;
+
+    }
 
     //====================== Click Handlers ======================
     @OnClick(R.id.addActivityButton)
@@ -208,6 +266,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapClick(LatLng latLng) {
         if(mInputMethodManager.isAcceptingText()){
+            mSearchTextInput.clearFocus();
             mInputMethodManager.hideSoftInputFromWindow(mSearchTextInput.getRootView().getWindowToken(), 0);
             return;
         }
@@ -225,8 +284,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (!mGpsEnabled) {
             if(mLocation != null){
-                mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+                //Temporarly removing as it seems to cause user flow problems
+                //mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                //mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
             }
             Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
             return false;
@@ -262,52 +322,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    //====================== Math ======================
 
-    /**
-     * calculates the distance between two locations in MILES
-     */
-    private double distance(double lat1, double lng1, double lat2, double lng2) {
-
-        double earthRadius = 3958.75; // in miles, change to 6371 for kilometer output
-
-        double dLat = Math.toRadians(lat2 - lat1);
-        double dLng = Math.toRadians(lng2 - lng1);
-
-        double sindLat = Math.sin(dLat / 2);
-        double sindLng = Math.sin(dLng / 2);
-
-        double a = Math.pow(sindLat, 2) + Math.pow(sindLng, 2)
-                * Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2));
-
-        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-        double dist = earthRadius * c;
-
-        return dist; // output distance, in MILES
-    }
-
-    // ====================== Services ======================
-    public boolean isGpsOn() {
-        try {
-            mGpsEnabled = mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-        } catch (Exception ex) {
-        }
-
-        return mGpsEnabled;
-    }
-
-    public boolean isDataOn() {
-        try {
-            mNetworkEnabled = mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-        } catch (Exception ex) {
-        }
-
-        return mNetworkEnabled;
-
-    }
-
-    //Fragments
+    //====================== Fragments ======================
     public void replaceFragment(Fragment fragment, String descriptor) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
@@ -330,9 +346,36 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
         //If the keyevent is a key-down event on the "enter" button
         if ((event.getAction() == KeyEvent.ACTION_DOWN) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
+            if(!isGpsOn() && mLocation == null){
+                Toast.makeText(MainActivity.this, "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
+                return true;
+            }
+            if(mSearchTextInput.length() <= 0){
+                Toast.makeText(MainActivity.this, "No search input has been added yet.", Toast.LENGTH_SHORT).show();
+                return true;
+            }
             mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
             mSearchTextInput.clearFocus();
 
+            String currentLocation = mLocation.latitude + "," + mLocation.longitude;
+            String searchText = mSearchTextInput.getText().toString();
+
+            Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
+
+            foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
+                @Override
+                public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
+                    Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
+
+                    mLocationResultsArray.addAll(response.body().getResults());
+                    rebuildMap();
+                }
+
+                @Override
+                public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
+                    Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
 
             mInputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
 
@@ -340,4 +383,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
         return false;
     }
+
+
+    @Override
+    public void notifyNewActivityAdded() {
+        mActivityLocations.clear();
+        mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
+        rebuildMap();
+    }
+
 }

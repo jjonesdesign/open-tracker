@@ -28,6 +28,7 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import jesse.jones.opentracker.interfaces.NewActivityAdded;
 import jesse.jones.opentracker.network.GoogleCityNameService;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.AddressComponent;
@@ -73,6 +74,8 @@ public class AddActivityFragment extends DialogFragment {
 
     DatabaseHelper mDatabaseHelper;
 
+    NewActivityAdded mNewActivityAddedInterface;
+
     public static AddActivityFragment getInstance() {
 
         return new AddActivityFragment();
@@ -104,6 +107,12 @@ public class AddActivityFragment extends DialogFragment {
         mLongitude = getArguments().getString("longitude");
 
         mDatabaseHelper = new DatabaseHelper(getContext());
+        mNewActivityAddedInterface = new NewActivityAdded() {
+            @Override
+            public void notifyNewActivityAdded() {
+
+            }
+        };
 
         return view;
     }
@@ -168,8 +177,10 @@ public class AddActivityFragment extends DialogFragment {
 
         Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
 
+        mNewActivityAddedInterface.notifyNewActivityAdded();
         mActivityNameInput.setText("");
         mActivityDesriptionInput.setText("");
 
+        this.dismiss();
     }
 }
