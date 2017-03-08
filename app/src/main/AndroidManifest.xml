@@ -22,7 +22,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
 
             </intent-filter>
+            <meta-data
+                android:name="android.app.default_searchable"
+                android:value=".MainActivity" />
         </activity>
+
         <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw"/>
     </application>
 
