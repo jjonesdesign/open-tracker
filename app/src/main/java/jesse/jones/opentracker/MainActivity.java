@@ -257,6 +257,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         AddActivityFragment addActivityFragment = new AddActivityFragment();
+        addActivityFragment.setNewActivityAddedListener(this);
         Bundle bundle = new Bundle();
         String locationString = mLocation.latitude + "," + mLocation.longitude;
         bundle.putString("location",locationString);
