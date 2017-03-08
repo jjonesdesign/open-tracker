@@ -107,12 +107,6 @@ public class AddActivityFragment extends DialogFragment {
         mLongitude = getArguments().getString("longitude");
 
         mDatabaseHelper = new DatabaseHelper(getContext());
-        mNewActivityAddedInterface = new NewActivityAdded() {
-            @Override
-            public void notifyNewActivityAdded() {
-
-            }
-        };
 
         return view;
     }
@@ -182,5 +176,9 @@ public class AddActivityFragment extends DialogFragment {
         mActivityDesriptionInput.setText("");
 
         this.dismiss();
+    }
+
+    public void setNewActivityAddedListener(NewActivityAdded newActivityAdded){
+        mNewActivityAddedInterface = newActivityAdded;
     }
 }
