@@ -1,6 +1,7 @@
 package jesse.jones.opentracker;
 
 import android.Manifest;
+import android.app.SearchManager;
 import android.content.Context;
 import android.inputmethodservice.InputMethodService;
 import android.location.LocationListener;
@@ -12,6 +13,7 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.SearchView;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -51,19 +53,15 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener,TextView.OnEditorActionListener, NewActivityAdded{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener, NewActivityAdded, SearchView.OnQueryTextListener, SearchView.OnCloseListener{
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
 
-    @BindView(R.id.updateLocationButton)
-    FloatingActionButton mUpdateLocationButton;
-
     @BindView(R.id.addActivityButton)
     FloatingActionButton mAddActivityButton;
 
-    @BindView(R.id.searchTextInput)
-    EditText mSearchTextInput;
+
 
     GoogleMap mMap;
     GetGooglePlacesResponse mNewGoog;
@@ -84,7 +82,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean mGpsEnabled = false;
     boolean mNetworkEnabled = false;
 
-    InputMethodManager mInputMethodManager;
 
 
     @Override
@@ -93,10 +90,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
-        mSearchTextInput.setOnEditorActionListener(this);
         mLocationResultsArray = new ArrayList<Result>();
 
-        mInputMethodManager = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -120,12 +115,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
 
+
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.options_menu, menu);
+
+        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
+        SearchView searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
+        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+        searchView.setOnQueryTextListener(this);
+        searchView.setOnCloseListener(this);
+
         return true;
     }
 
@@ -265,18 +268,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapClick(LatLng latLng) {
-        if(mInputMethodManager.isAcceptingText()){
-            mSearchTextInput.clearFocus();
-            mInputMethodManager.hideSoftInputFromWindow(mSearchTextInput.getRootView().getWindowToken(), 0);
-            return;
-        }
 
         Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
         mLocation = latLng;
         mMap.clear();
 
+        rebuildMap();
+
         mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+
+
     }
     @Override
     public boolean onMyLocationButtonClick() {
@@ -341,48 +343,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    //====================== Search ======================
-    @Override
-    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-        //If the keyevent is a key-down event on the "enter" button
-        if ((event.getAction() == KeyEvent.ACTION_DOWN) && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) {
-            if(!isGpsOn() && mLocation == null){
-                Toast.makeText(MainActivity.this, "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
-                return true;
-            }
-            if(mSearchTextInput.length() <= 0){
-                Toast.makeText(MainActivity.this, "No search input has been added yet.", Toast.LENGTH_SHORT).show();
-                return true;
-            }
-            mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
-            mSearchTextInput.clearFocus();
 
-            String currentLocation = mLocation.latitude + "," + mLocation.longitude;
-            String searchText = mSearchTextInput.getText().toString();
-
-            Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
-
-            foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
-                @Override
-                public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
-                    Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
-
-                    mLocationResultsArray.addAll(response.body().getResults());
-                    rebuildMap();
-                }
-
-                @Override
-                public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
-                    Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
-                }
-            });
-
-            mInputMethodManager.hideSoftInputFromWindow(v.getWindowToken(), 0);
-
-            return true;
-        }
-        return false;
-    }
 
 
     @Override
@@ -392,4 +353,50 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         rebuildMap();
     }
 
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        if(!isGpsOn() && mLocation == null){
+            Toast.makeText(getBaseContext(), "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
+            return true;
+        }
+        if(query.length() <= 0){
+            Toast.makeText(getBaseContext(), "No search input has been added yet.", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
+
+
+        String currentLocation = mLocation.latitude + "," + mLocation.longitude;
+        String searchText = query;
+
+        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
+
+        foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
+            @Override
+            public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
+                Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
+
+                mLocationResultsArray.addAll(response.body().getResults());
+                rebuildMap();
+            }
+
+            @Override
+            public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
+                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        return false;
+    }
+
+    @Override
+    public boolean onClose() {
+        mLocationResultsArray.clear();
+        rebuildMap();
+        return false;
+    }
 }
