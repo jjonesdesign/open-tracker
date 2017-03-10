@@ -1,39 +1,26 @@
 package jesse.jones.opentracker;
 
-import android.Manifest;
-import android.app.Activity;
 import android.app.Dialog;
-import android.location.LocationManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.DialogFragment;
-import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.EditText;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import jesse.jones.opentracker.interfaces.NewActivityAdded;
+import jesse.jones.opentracker.interfaces.UserActivityListener;
 import jesse.jones.opentracker.network.GoogleCityNameService;
-import jesse.jones.opentracker.network.GooglePlacesService;
-import jesse.jones.opentracker.network.entity.AddressComponent;
 import jesse.jones.opentracker.network.entity.GetGoogleLocationNameResponse;
-import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import jesse.jones.opentracker.network.entity.LocationNameResult;
 import jesse.jones.opentracker.utils.DatabaseHelper;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
@@ -67,14 +54,18 @@ public class AddActivityFragment extends DialogFragment {
 
     Retrofit mRetrofit;
     GoogleCityNameService mGoogleCityNameService;
+    private final String GOOGLE_MAPS_URL = "https://maps.googleapis.com/";
 
     String mLocationCords;
+    private final String KEY_LOCATION = "location";
     String mLatitude;
+    private final String KEY_LATITUDE = "latitude";
     String mLongitude;
+    private final String KEY_LONGITUDE= "longitude";
 
     DatabaseHelper mDatabaseHelper;
 
-    NewActivityAdded mNewActivityAddedInterface;
+    UserActivityListener mUserActivityListenerInterface;
 
     public static AddActivityFragment getInstance() {
 
@@ -98,13 +89,20 @@ public class AddActivityFragment extends DialogFragment {
 
 
         mRetrofit = new Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/")
+                .baseUrl(GOOGLE_MAPS_URL)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
-        mLocationCords = getArguments().getString("location");
-        mLatitude = getArguments().getString("latitude");
-        mLongitude = getArguments().getString("longitude");
+        Bundle arguments = getArguments();
+
+        if(arguments == null){
+
+        }else{
+            mLocationCords = getArguments().getString(KEY_LOCATION);
+            mLatitude = getArguments().getString(KEY_LATITUDE);
+            mLongitude = getArguments().getString(KEY_LONGITUDE);
+        }
+
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
@@ -171,14 +169,14 @@ public class AddActivityFragment extends DialogFragment {
 
         Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
 
-        mNewActivityAddedInterface.notifyNewActivityAdded();
+        mUserActivityListenerInterface.notifyNewActivityAdded();
         mActivityNameInput.setText("");
         mActivityDesriptionInput.setText("");
 
         this.dismiss();
     }
 
-    public void setNewActivityAddedListener(NewActivityAdded newActivityAdded){
-        mNewActivityAddedInterface = newActivityAdded;
+    public void setNewActivityAddedListener(UserActivityListener userActivityListener){
+        mUserActivityListenerInterface = userActivityListener;
     }
 }

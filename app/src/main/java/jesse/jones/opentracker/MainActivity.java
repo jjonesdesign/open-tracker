@@ -3,7 +3,6 @@ package jesse.jones.opentracker;
 import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
-import android.inputmethodservice.InputMethodService;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
@@ -14,21 +13,16 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.SearchView;
-import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.inputmethod.InputMethodManager;
-import android.widget.EditText;
 import android.widget.FrameLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
@@ -40,10 +34,9 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import jesse.jones.opentracker.interfaces.NewActivityAdded;
+import jesse.jones.opentracker.interfaces.UserActivityListener;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
-import jesse.jones.opentracker.network.entity.Location;
 import jesse.jones.opentracker.network.entity.Result;
 import jesse.jones.opentracker.utils.DatabaseHelper;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
@@ -53,7 +46,7 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener, NewActivityAdded, SearchView.OnQueryTextListener, SearchView.OnCloseListener{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener, UserActivityListener, SearchView.OnQueryTextListener, SearchView.OnCloseListener{
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
