@@ -6,6 +6,6 @@ import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
  * Created by admin on 3/1/17.
  */
 
-public interface NewActivityAdded {
+public interface UserActivityListener {
     void notifyNewActivityAdded();
 }
