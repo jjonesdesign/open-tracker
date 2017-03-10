@@ -3,9 +3,11 @@ package jesse.jones.opentracker;
 import android.Manifest;
 import android.app.SearchManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -16,7 +18,9 @@ import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -63,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     LatLng mLocation;
     LatLng mPreviousLocation;
+    LatLng mCurrentLocationSelection;
     List<Result> mLocationResultsArray;
     LocationManager mLocationManager;
 
@@ -75,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     boolean mGpsEnabled = false;
     boolean mNetworkEnabled = false;
 
-
+    public static final int MY_PERMISSION_FINE_LOCATION = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -101,10 +106,37 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mActivityLocations = new ArrayList<ActivityEntry>();
         mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
 
+        // Here, thisActivity is the current activity
+        if (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+
+                // Show an explanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(MainActivity.this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        MY_PERMISSION_FINE_LOCATION);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }else{
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+        }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
+
         }
 
 
@@ -145,6 +177,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap.setOnMarkerClickListener(this);
         mMapReady = true;
 
+        // Setting a custom info window adapter for the google map
+        mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+
+            // Use default InfoWindow frame
+            @Override
+            public View getInfoWindow(Marker arg0) {
+                return null;
+            }
+
+            // Defines the contents of the InfoWindow
+            @Override
+            public View getInfoContents(Marker marker) {
+
+                // Getting view from the layout file info_window_layout
+                View v = getLayoutInflater().inflate(R.layout.map_custom_info_window, null);
+
+
+                TextView locationName = (TextView) v.findViewById(R.id.locationNameText);
+                locationName.setText(marker.getTitle());
+
+                TextView locationDescription = (TextView) v.findViewById(R.id.locationDescriptionText);
+                locationDescription.setText(marker.getSnippet());
+                // Returning the view containing InfoWindow contents
+                return v;
+
+            }
+        });
+
         rebuildMap();
 
 
@@ -152,6 +212,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onMarkerClick(Marker marker) {
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(marker.getPosition()));
         marker.showInfoWindow();
 
         return true;
@@ -159,6 +220,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public void rebuildMap(){
         mMap.clear();
+
+
 
         for(int i=0; i < mLocationResultsArray.size(); i++){
             Result newRespone = mLocationResultsArray.get(i);
@@ -185,6 +248,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.addMarker(aNewMarker);
         }
 
+        if(mCurrentLocationSelection != null){
+            MarkerOptions aNewMarker = new MarkerOptions();
+            aNewMarker.title("Currently Selected Location");
+            aNewMarker.position(new LatLng(new Double(mCurrentLocationSelection.latitude),new Double(mCurrentLocationSelection.longitude)));
+
+            aNewMarker.icon(BitmapDescriptorFactory.fromResource(R.mipmap.selectedlocation));
+
+            mMap.addMarker(aNewMarker);
+        }
+
     }
 
 
@@ -202,6 +275,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLocationChanged(android.location.Location location) {
         //txtLat.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
         mLocation = new LatLng(location.getLatitude(), location.getLongitude());
+        if(mCurrentLocationSelection == null && mLocation != null){
+            mCurrentLocationSelection = mLocation;
+        }
         Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
 
         if (mMapReady) {
@@ -209,9 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             mPreviousLocation = mLocation;
             if (mLocationManager != null) {
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
-                    mLocationManager.removeUpdates(this);
-                }
+                mLocationManager.removeUpdates(this);
             }
         }
     }
@@ -264,13 +338,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapClick(LatLng latLng) {
 
         Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
-        mLocation = latLng;
+
         mMap.clear();
+
+        mCurrentLocationSelection = latLng;
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(mCurrentLocationSelection));
 
         rebuildMap();
 
-        mMap.addMarker(new MarkerOptions().position(mLocation).title("My Location"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+
+
 
 
     }
@@ -289,10 +366,17 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == 0) {
+
+        try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
 
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
+
+        mCurrentLocationSelection = mLocation;
+        rebuildMap();
+
         return false;
     }
     @Override
@@ -392,5 +476,35 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mLocationResultsArray.clear();
         rebuildMap();
         return false;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSION_FINE_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    try {
+                        mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+                        mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+                    } catch (SecurityException e) {
+                        e.printStackTrace();
+                        Toast.makeText(getBaseContext(), e.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+
+                } else {
+
+                    // permission denied, boo! Disable the
+                    // functionality that depends on this permission.
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other
+            // permissions this app might request
+        }
     }
 }
