@@ -63,6 +63,15 @@ public class AddActivityFragment extends DialogFragment {
     String mLongitude;
     private final String KEY_LONGITUDE= "longitude";
 
+    int mId = 0;
+    String mName;
+    String mDescription;
+    private final String KEY_ID = "id";
+    private final String KEY_NAME = "name";
+    private final String KEY_DESCRIPTION = "description";
+
+    ActivityEntry mEntry;
+
     DatabaseHelper mDatabaseHelper;
 
     UserActivityListener mUserActivityListenerInterface;
@@ -86,7 +95,7 @@ public class AddActivityFragment extends DialogFragment {
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.add_activity_fragment, container, false);
-
+        ButterKnife.bind(this, view);
 
         mRetrofit = new Retrofit.Builder()
                 .baseUrl(GOOGLE_MAPS_URL)
@@ -98,6 +107,7 @@ public class AddActivityFragment extends DialogFragment {
         if(arguments == null){
 
         }else{
+            mId = getArguments().getInt(KEY_ID);
             mLocationCords = getArguments().getString(KEY_LOCATION);
             mLatitude = getArguments().getString(KEY_LATITUDE);
             mLongitude = getArguments().getString(KEY_LONGITUDE);
@@ -106,13 +116,22 @@ public class AddActivityFragment extends DialogFragment {
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
+        if(mId > 0){
+            mEntry = mDatabaseHelper.getActivityEntry(mId);
+            mName = mEntry.getName();
+            mActivityNameInput.setText(mName);
+            mDescription = mEntry.getDescription();
+            mActivityDesriptionInput.setText(mDescription);
+
+        }
+
         return view;
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
 
-        ButterKnife.bind(this, view);
+
 
         mGoogleCityNameService = mRetrofit.create(GoogleCityNameService.class);
 
@@ -157,19 +176,32 @@ public class AddActivityFragment extends DialogFragment {
     @OnClick(R.id.createActivityButton)
     public void addActivityButtonClicked(ImageView imageView) {
 
+        if(mId > 0){
+            mEntry.setName(mActivityNameInput.getText().toString());
+            mEntry.setDescription(mActivityDesriptionInput.getText().toString());
 
-        ActivityEntry newActivityEntry = new ActivityEntry();
-        newActivityEntry.setName(mActivityNameInput.getText().toString());
-        newActivityEntry.setDescription(mActivityDesriptionInput.getText().toString());
-        newActivityEntry.setLatitude(mLatitude);
-        newActivityEntry.setLongitude(mLongitude);
-        newActivityEntry.setStatus(1);
+            long results = mDatabaseHelper.updateActivtyEntry(mEntry);
 
-        long results = mDatabaseHelper.createActivityEntry(newActivityEntry);
+            mUserActivityListenerInterface.notifyActivityUpdated();
 
-        Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+        }else {
 
-        mUserActivityListenerInterface.notifyNewActivityAdded();
+            ActivityEntry newActivityEntry = new ActivityEntry();
+            newActivityEntry.setName(mActivityNameInput.getText().toString());
+            newActivityEntry.setDescription(mActivityDesriptionInput.getText().toString());
+            newActivityEntry.setLatitude(mLatitude);
+            newActivityEntry.setLongitude(mLongitude);
+            newActivityEntry.setStatus(1);
+
+            long results = mDatabaseHelper.createActivityEntry(newActivityEntry);
+
+            mUserActivityListenerInterface.notifyNewActivityAdded();
+
+            Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+        }
+
+
         mActivityNameInput.setText("");
         mActivityDesriptionInput.setText("");
 

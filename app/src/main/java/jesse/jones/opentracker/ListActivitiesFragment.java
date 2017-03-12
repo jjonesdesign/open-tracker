@@ -19,6 +19,7 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import jesse.jones.opentracker.adapter.ActivitiesAdapter;
+import jesse.jones.opentracker.interfaces.UserActivityListener;
 import jesse.jones.opentracker.utils.DatabaseHelper;
 import jesse.jones.opentracker.utils.ItemClickSupport;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
@@ -27,7 +28,7 @@ import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
  * Created by admin on 2/27/17.
  */
 
-public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener,View.OnClickListener {
+public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, View.OnClickListener,UserActivityListener {
 
     @BindView(R.id.closeActivitiesListButton)
     ImageView mCloseActivitiesListButton;
@@ -56,9 +57,10 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = LayoutInflater.from(getContext()).inflate(R.layout.activities_list_fragment, container, false);
 
-        mRecyclerView = (RecyclerView)view.findViewById(R.id.list);
-        mLayoutManager = new LinearLayoutManager(getContext(),LinearLayoutManager.VERTICAL,false);
+        mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
+        mLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(mLayoutManager);
+        ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(this);
 
         mActivitiesAdapter = new ActivitiesAdapter();
 
@@ -92,10 +94,23 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     }
 
 
-
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+        ActivityEntry entry = mActivitiesAdapter.getLocation(position);
 
+        AddActivityFragment addActivityFragment = new AddActivityFragment();
+        addActivityFragment.setNewActivityAddedListener((MainActivity)getActivity());
+        Bundle bundle = new Bundle();
+
+        bundle.putInt("id",entry.getId());
+        String locationString = entry.getLatitude() + "," + entry.getLongitude();
+        bundle.putString("location",locationString);
+        bundle.putString("latitude",String.valueOf(entry.getLatitude()));
+        bundle.putString("longitude",String.valueOf(entry.getLongitude()));
+
+
+        addActivityFragment.setArguments(bundle);
+        addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
 
     @Override
@@ -106,8 +121,18 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
             //case R.id.new_unit_button:
 
-              //  break;
-            }
+            //  break;
         }
+    }
 
+    @Override
+    public void notifyNewActivityAdded() {
+
+    }
+
+    @Override
+    public void notifyActivityUpdated() {
+        List<ActivityEntry> activities = mDatabaseHelper.getActivityEntries();
+        mActivitiesAdapter.setContent(activities);
+    }
 }

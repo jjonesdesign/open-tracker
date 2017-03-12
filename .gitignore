@@ -42,3 +42,5 @@ captures/
 # Idea files
 *.idea*
 
+#max ds files
+.DS_Store
