@@ -28,7 +28,7 @@ import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
  * Created by admin on 2/27/17.
  */
 
-public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, View.OnClickListener,UserActivityListener {
+public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, ItemClickSupport.OnItemLongClickListener, View.OnClickListener,UserActivityListener {
 
     @BindView(R.id.closeActivitiesListButton)
     ImageView mCloseActivitiesListButton;
@@ -99,7 +99,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         ActivityEntry entry = mActivitiesAdapter.getLocation(position);
 
         AddActivityFragment addActivityFragment = new AddActivityFragment();
-        addActivityFragment.setNewActivityAddedListener((MainActivity)getActivity());
+        addActivityFragment.setActivityUpdatedListener(this);
         Bundle bundle = new Bundle();
 
         bundle.putInt("id",entry.getId());
@@ -111,6 +111,12 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
         addActivityFragment.setArguments(bundle);
         addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
+    }
+
+    @Override
+    public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
+
+        return false;
     }
 
     @Override
@@ -135,4 +141,6 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         List<ActivityEntry> activities = mDatabaseHelper.getActivityEntries();
         mActivitiesAdapter.setContent(activities);
     }
+
+
 }
