@@ -75,6 +75,7 @@ public class AddActivityFragment extends DialogFragment {
     DatabaseHelper mDatabaseHelper;
 
     UserActivityListener mUserActivityListenerInterface;
+    UserActivityListener mActivityUpdatedListener;
 
     public static AddActivityFragment getInstance() {
 
@@ -182,7 +183,7 @@ public class AddActivityFragment extends DialogFragment {
 
             long results = mDatabaseHelper.updateActivtyEntry(mEntry);
 
-            mUserActivityListenerInterface.notifyActivityUpdated();
+            mActivityUpdatedListener.notifyActivityUpdated();
 
             Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
         }else {
@@ -210,5 +211,8 @@ public class AddActivityFragment extends DialogFragment {
 
     public void setNewActivityAddedListener(UserActivityListener userActivityListener){
         mUserActivityListenerInterface = userActivityListener;
+    }
+    public void setActivityUpdatedListener(UserActivityListener userActivityListener){
+        mActivityUpdatedListener = userActivityListener;
     }
 }

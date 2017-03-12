@@ -6,7 +6,6 @@ This app allows you to easily select a location, and attach the activity that yo
 Add a short description to your activity to help you better remember the details.
 
 ## Features
-------
 
 * Get Current Location
 * Manually Select Location
