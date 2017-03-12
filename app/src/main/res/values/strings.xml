@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">OpenTracker</string>
 
+    <string name="menu_option_show_search_result_list">Search Results List</string>
     <string name="menu_option_activities">Activities</string>
     <string name="menu_option_settings">Settings</string>
     <string name="menu_option_search">Search</string>

@@ -8,4 +8,5 @@ import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 
 public interface UserActivityListener {
     void notifyNewActivityAdded();
+    void notifyActivityUpdated();
 }
