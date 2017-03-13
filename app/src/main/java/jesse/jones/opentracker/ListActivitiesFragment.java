@@ -7,7 +7,10 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.ContextMenu;
 import android.view.LayoutInflater;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -38,6 +41,10 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     RecyclerView mRecyclerView;
     RecyclerView.LayoutManager mLayoutManager;
     ActivitiesAdapter mActivitiesAdapter;
+    List<ActivityEntry> mActivityEntries;
+
+
+    ActivityEntry mLongPressedSelectedItem;
 
     public static ListActivitiesFragment getInstance() {
 
@@ -65,15 +72,15 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         mActivitiesAdapter = new ActivitiesAdapter();
 
         ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(this);
+        ItemClickSupport.addTo(mRecyclerView).setOnItemLongClickListener(this);
         mRecyclerView.setAdapter(mActivitiesAdapter);
-
+        registerForContextMenu(mRecyclerView);
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
-        List<ActivityEntry> activities = mDatabaseHelper.getActivityEntries();
-        mActivitiesAdapter.setContent(activities);
+        mActivityEntries = mDatabaseHelper.getActivityEntries();
+        mActivitiesAdapter.setContent(mActivityEntries);
 
-        Toast.makeText(getContext(), String.valueOf(activities.size()), Toast.LENGTH_SHORT).show();
 
         return view;
     }
@@ -89,10 +96,48 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
 
     @OnClick(R.id.closeActivitiesListButton)
-    public void addActivityButtonClicked(ImageView imageView) {
+    public void closeActivityButtonClicked(ImageView imageView) {
         this.dismiss();
     }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        super.onCreateContextMenu(menu, v, menuInfo);
+        MenuInflater inflater = getActivity().getMenuInflater();
+        inflater.inflate(R.menu.list_options, menu);
+
+
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_list_edit:
+
+                break;
+            // action with ID action_settings was selected
+            case R.id.action_list_delete:
+                if(mLongPressedSelectedItem != null){
+                    try {
+                        mDatabaseHelper.deleteActivityEntry(mLongPressedSelectedItem);
+                        mActivityEntries.remove(mLongPressedSelectedItem);
+                        mActivitiesAdapter.setContent(mActivityEntries);
+                        Toast.makeText(getContext(), "Item Deleted", Toast.LENGTH_SHORT).show();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+
+
+                break;
+            default:
+                break;
+        }
+
+        return true;
+    }
 
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
@@ -113,11 +158,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
 
-    @Override
-    public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
 
-        return false;
-    }
 
     @Override
     public void onClick(View v) {
@@ -138,9 +179,14 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
     @Override
     public void notifyActivityUpdated() {
-        List<ActivityEntry> activities = mDatabaseHelper.getActivityEntries();
-        mActivitiesAdapter.setContent(activities);
+        mActivityEntries = mDatabaseHelper.getActivityEntries();
+        mActivitiesAdapter.setContent(mActivityEntries);
     }
 
 
+    @Override
+    public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
+        mLongPressedSelectedItem = mActivitiesAdapter.getLocation(position);
+        return false;
+    }
 }

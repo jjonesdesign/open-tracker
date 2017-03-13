@@ -14,7 +14,9 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -38,17 +40,21 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import jesse.jones.opentracker.adapter.ActivitiesAdapter;
 import jesse.jones.opentracker.interfaces.UserActivityListener;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import jesse.jones.opentracker.network.entity.Result;
 import jesse.jones.opentracker.utils.DatabaseHelper;
+import jesse.jones.opentracker.utils.ItemClickSupport;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
+
+import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, UserActivityListener, SearchView.OnQueryTextListener, SearchView.OnCloseListener{
 
@@ -83,6 +89,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static final int MY_PERMISSION_FINE_LOCATION = 1;
 
     Menu mOptionsMenu;
+
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -520,5 +529,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        return false;
+    }
 
 }
