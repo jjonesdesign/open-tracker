@@ -51,6 +51,8 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         return new ListActivitiesFragment();
     }
 
+
+
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -74,15 +76,25 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(this);
         ItemClickSupport.addTo(mRecyclerView).setOnItemLongClickListener(this);
         mRecyclerView.setAdapter(mActivitiesAdapter);
-        registerForContextMenu(mRecyclerView);
+        //registerForContextMenu(mRecyclerView);
+
+        //setHasOptionsMenu(true);
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
         mActivityEntries = mDatabaseHelper.getActivityEntries();
         mActivitiesAdapter.setContent(mActivityEntries);
 
+        view.setOnCreateContextMenuListener(this);
 
         return view;
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
+
     }
 
     @Override
@@ -101,12 +113,23 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     }
 
     @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
+    }
+
+    @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         super.onCreateContextMenu(menu, v, menuInfo);
         MenuInflater inflater = getActivity().getMenuInflater();
         inflater.inflate(R.menu.list_options, menu);
 
 
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
