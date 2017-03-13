@@ -15,4 +15,7 @@
     <string name="display_location_name">Location Name</string>
     <string name="display_activity_name">Activity Name</string>
 
+
+    <string name="display_menu_edit">Edit</string>
+    <string name="display_menu_delete">Delete</string>
 </resources>
