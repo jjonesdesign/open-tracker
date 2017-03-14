@@ -34,6 +34,10 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,7 +45,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import jesse.jones.opentracker.adapter.ActivitiesAdapter;
-import jesse.jones.opentracker.interfaces.UserActivityListener;
+import jesse.jones.opentracker.events.NewActivityEntryEvent;
+import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import jesse.jones.opentracker.network.entity.Result;
@@ -56,14 +61,13 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 import static java.security.AccessController.getContext;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener,GoogleMap.OnMyLocationButtonClickListener,GoogleMap.OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, UserActivityListener, SearchView.OnQueryTextListener, SearchView.OnCloseListener{
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, SearchView.OnQueryTextListener, SearchView.OnCloseListener {
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
 
     @BindView(R.id.addActivityButton)
     FloatingActionButton mAddActivityButton;
-
 
 
     GoogleMap mMap;
@@ -74,7 +78,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LatLng mLocation;
     LatLng mPreviousLocation;
     LatLng mCurrentLocationSelection;
-    List<Result> mLocationResultsArray = new ArrayList<Result>();;
+    List<Result> mLocationResultsArray = new ArrayList<Result>();
+    ;
     LocationManager mLocationManager;
 
     DatabaseHelper mDatabaseHelper;
@@ -91,13 +96,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     Menu mOptionsMenu;
 
 
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
+
+        EventBus.getDefault().register(this);
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -135,12 +140,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSION_FINE_LOCATION);
             }
-        }else{
+        } else {
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         }
     }
 
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
+    }
+    
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -171,7 +182,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
 
-        if(lastLocation != null) {
+        if (lastLocation != null) {
             LatLng lastLatLng = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
             mLocation = lastLatLng;
             mMap.moveCamera(CameraUpdateFactory.newLatLng(lastLatLng));
@@ -200,7 +211,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 View v = getLayoutInflater().inflate(R.layout.map_custom_info_window, null);
 
 
-
                 TextView locationName = (TextView) v.findViewById(R.id.locationNameText);
                 locationName.setText(marker.getTitle());
 
@@ -224,26 +234,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
-    public void rebuildMap(){
+    public void rebuildMap() {
         mMap.clear();
 
-        for(int i=0; i < mLocationResultsArray.size(); i++){
+        for (int i = 0; i < mLocationResultsArray.size(); i++) {
             Result newRespone = mLocationResultsArray.get(i);
 
             MarkerOptions aNewMarker = new MarkerOptions();
             aNewMarker.title(newRespone.getName().toString());
-            aNewMarker.position(new LatLng(newRespone.getGeometry().getLocation().getLat(),newRespone.getGeometry().getLocation().getLng()));
+            aNewMarker.position(new LatLng(newRespone.getGeometry().getLocation().getLat(), newRespone.getGeometry().getLocation().getLng()));
             aNewMarker.snippet(newRespone.getName().toString());
 
             mMap.addMarker(aNewMarker);
         }
 
-        for(int i=0; i < mActivityLocations.size(); i++){
+        for (int i = 0; i < mActivityLocations.size(); i++) {
             ActivityEntry aActivityEntry = mActivityLocations.get(i);
 
             MarkerOptions aNewMarker = new MarkerOptions();
             aNewMarker.title(aActivityEntry.getName().toString());
-            aNewMarker.position(new LatLng(new Double(aActivityEntry.getLatitude()),new Double(aActivityEntry.getLongitude())));
+            aNewMarker.position(new LatLng(new Double(aActivityEntry.getLatitude()), new Double(aActivityEntry.getLongitude())));
             aNewMarker.snippet(aActivityEntry.getDescription().toString());
 
 
@@ -252,10 +262,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mMap.addMarker(aNewMarker);
         }
 
-        if(mCurrentLocationSelection != null){
+        if (mCurrentLocationSelection != null) {
             MarkerOptions aNewMarker = new MarkerOptions();
             aNewMarker.title("Currently Selected Location");
-            aNewMarker.position(new LatLng(new Double(mCurrentLocationSelection.latitude),new Double(mCurrentLocationSelection.longitude)));
+            aNewMarker.position(new LatLng(new Double(mCurrentLocationSelection.latitude), new Double(mCurrentLocationSelection.longitude)));
 
             aNewMarker.icon(BitmapDescriptorFactory.fromResource(R.mipmap.selectedlocation));
 
@@ -279,7 +289,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLocationChanged(android.location.Location location) {
         //txtLat.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
         mLocation = new LatLng(location.getLatitude(), location.getLongitude());
-        if(mCurrentLocationSelection == null && mLocation != null){
+        if (mCurrentLocationSelection == null && mLocation != null) {
             mCurrentLocationSelection = mLocation;
         }
         Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
@@ -326,21 +336,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         AddActivityFragment addActivityFragment = new AddActivityFragment();
-        addActivityFragment.setNewActivityAddedListener(this);
         Bundle bundle = new Bundle();
 
         LatLng location;
 
-        if(mCurrentLocationSelection != null){
+        if (mCurrentLocationSelection != null) {
             location = mCurrentLocationSelection;
-        }else{
+        } else {
             location = mLocation;
         }
 
         String locationString = location.latitude + "," + location.longitude;
-        bundle.putString("location",locationString);
-        bundle.putString("latitude",String.valueOf(location.latitude));
-        bundle.putString("longitude",String.valueOf(location.longitude));
+        bundle.putString("location", locationString);
+        bundle.putString("latitude", String.valueOf(location.latitude));
+        bundle.putString("longitude", String.valueOf(location.longitude));
         addActivityFragment.setArguments(bundle);
         addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
@@ -357,12 +366,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         rebuildMap();
     }
+
     @Override
     public boolean onMyLocationButtonClick() {
         isGpsOn();
 
         if (!mGpsEnabled) {
-            if(mLocation != null){
+            if (mLocation != null) {
                 //Temporarly removing as it seems to cause user flow problems
                 //mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
                 //mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
@@ -416,7 +426,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
     //====================== Fragments ======================
     public void replaceFragment(Fragment fragment, String descriptor) {
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -435,28 +444,28 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-
-
-
-    @Override
-    public void notifyNewActivityAdded() {
+    // Get called when an event is added up updated.
+    //Refresh adapter data
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(NewActivityEntryEvent event){
+        mActivityLocations.clear();
+        mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
+        rebuildMap();
+    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(UpdatedActivityEntryEvent event){
         mActivityLocations.clear();
         mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
         rebuildMap();
     }
 
     @Override
-    public void notifyActivityUpdated() {
-
-    }
-
-    @Override
     public boolean onQueryTextSubmit(String query) {
-        if(!isGpsOn() && mLocation == null){
+        if (!isGpsOn() && mLocation == null) {
             Toast.makeText(getBaseContext(), "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
             return true;
         }
-        if(query.length() <= 0){
+        if (query.length() <= 0) {
             Toast.makeText(getBaseContext(), "No search input has been added yet.", Toast.LENGTH_SHORT).show();
             return true;
         }
@@ -533,5 +542,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public boolean onContextItemSelected(MenuItem item) {
         return false;
     }
+
+
+
+
 
 }

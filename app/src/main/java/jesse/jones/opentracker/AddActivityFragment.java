@@ -13,12 +13,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.greenrobot.eventbus.EventBus;
+
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import jesse.jones.opentracker.interfaces.UserActivityListener;
+import jesse.jones.opentracker.events.NewActivityEntryEvent;
+import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
 import jesse.jones.opentracker.network.GoogleCityNameService;
 import jesse.jones.opentracker.network.entity.GetGoogleLocationNameResponse;
 import jesse.jones.opentracker.network.entity.LocationNameResult;
@@ -73,9 +76,6 @@ public class AddActivityFragment extends DialogFragment {
     ActivityEntry mEntry;
 
     DatabaseHelper mDatabaseHelper;
-
-    UserActivityListener mUserActivityListenerInterface;
-    UserActivityListener mActivityUpdatedListener;
 
     public static AddActivityFragment getInstance() {
 
@@ -183,7 +183,8 @@ public class AddActivityFragment extends DialogFragment {
 
             long results = mDatabaseHelper.updateActivtyEntry(mEntry);
 
-            mActivityUpdatedListener.notifyActivityUpdated();
+
+            EventBus.getDefault().post(new UpdatedActivityEntryEvent());
 
             Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
         }else {
@@ -197,7 +198,8 @@ public class AddActivityFragment extends DialogFragment {
 
             long results = mDatabaseHelper.createActivityEntry(newActivityEntry);
 
-            mUserActivityListenerInterface.notifyNewActivityAdded();
+
+            EventBus.getDefault().post(new NewActivityEntryEvent());
 
             Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
         }
@@ -209,10 +211,5 @@ public class AddActivityFragment extends DialogFragment {
         this.dismiss();
     }
 
-    public void setNewActivityAddedListener(UserActivityListener userActivityListener){
-        mUserActivityListenerInterface = userActivityListener;
-    }
-    public void setActivityUpdatedListener(UserActivityListener userActivityListener){
-        mActivityUpdatedListener = userActivityListener;
-    }
+
 }
