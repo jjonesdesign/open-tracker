@@ -32,6 +32,11 @@ public class ActivitiesAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         ActivitiesHolder activitiesHolder = (ActivitiesHolder) holder;
         activitiesHolder.clear();
         activitiesHolder.setName(mContent.get(position).getName());
+        if(mContent.get(position).getDescription().length() > 30){
+            activitiesHolder.setDescripion(mContent.get(position).getDescription().substring(0,30));
+        }else{
+            activitiesHolder.setDescripion(mContent.get(position).getDescription());
+        }
     }
 
     @Override
