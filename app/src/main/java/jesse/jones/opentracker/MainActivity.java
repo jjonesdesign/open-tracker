@@ -151,7 +151,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
-    
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
