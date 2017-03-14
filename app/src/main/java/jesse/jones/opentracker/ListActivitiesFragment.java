@@ -6,8 +6,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -16,13 +18,18 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import org.greenrobot.eventbus.EventBus;
+import org.greenrobot.eventbus.Subscribe;
+import org.greenrobot.eventbus.ThreadMode;
+
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import jesse.jones.opentracker.adapter.ActivitiesAdapter;
-import jesse.jones.opentracker.interfaces.UserActivityListener;
+import jesse.jones.opentracker.events.NewActivityEntryEvent;
+import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
 import jesse.jones.opentracker.utils.DatabaseHelper;
 import jesse.jones.opentracker.utils.ItemClickSupport;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
@@ -31,7 +38,7 @@ import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
  * Created by admin on 2/27/17.
  */
 
-public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, ItemClickSupport.OnItemLongClickListener, View.OnClickListener,UserActivityListener {
+public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, ItemClickSupport.OnItemLongClickListener, MenuItem.OnMenuItemClickListener {
 
     @BindView(R.id.closeActivitiesListButton)
     ImageView mCloseActivitiesListButton;
@@ -43,14 +50,11 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     ActivitiesAdapter mActivitiesAdapter;
     List<ActivityEntry> mActivityEntries;
 
-
     ActivityEntry mLongPressedSelectedItem;
 
     public static ListActivitiesFragment getInstance() {
-
         return new ListActivitiesFragment();
     }
-
 
 
     @NonNull
@@ -76,16 +80,15 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(this);
         ItemClickSupport.addTo(mRecyclerView).setOnItemLongClickListener(this);
         mRecyclerView.setAdapter(mActivitiesAdapter);
-        //registerForContextMenu(mRecyclerView);
 
-        //setHasOptionsMenu(true);
+        registerForContextMenu(view);
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
         mActivityEntries = mDatabaseHelper.getActivityEntries();
         mActivitiesAdapter.setContent(mActivityEntries);
 
-        view.setOnCreateContextMenuListener(this);
+        EventBus.getDefault().register(this);
 
         return view;
     }
@@ -93,29 +96,38 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
-
-
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-
         ButterKnife.bind(this, view);
-
-
         super.onViewCreated(view, savedInstanceState);
-    }
-
-
-    @OnClick(R.id.closeActivitiesListButton)
-    public void closeActivityButtonClicked(ImageView imageView) {
-        this.dismiss();
     }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
+    }
+
+
+
+    @Override
+    public void onItemClicked(RecyclerView recyclerView, int position, View v) {
+        ActivityEntry entry = mActivitiesAdapter.getLocation(position);
+
+        AddActivityFragment addActivityFragment = new AddActivityFragment();
+        Bundle bundle = new Bundle();
+
+        bundle.putInt("id", entry.getId());
+        String locationString = entry.getLatitude() + "," + entry.getLongitude();
+        bundle.putString("location", locationString);
+        bundle.putString("latitude", String.valueOf(entry.getLatitude()));
+        bundle.putString("longitude", String.valueOf(entry.getLongitude()));
+
+
+        addActivityFragment.setArguments(bundle);
+        addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
 
     @Override
@@ -125,24 +137,33 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         inflater.inflate(R.menu.list_options, menu);
 
 
+        menu.getItem(0).setOnMenuItemClickListener(this);
+        menu.getItem(1).setOnMenuItemClickListener(this);
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-
+    public boolean onMenuItemClick(MenuItem item) {
         switch (item.getItemId()) {
             // action with ID action_refresh was selected
             case R.id.action_list_edit:
+                ActivityEntry entry = mLongPressedSelectedItem;
 
+                AddActivityFragment addActivityFragment = new AddActivityFragment();
+                Bundle bundle = new Bundle();
+
+                bundle.putInt("id", entry.getId());
+                String locationString = entry.getLatitude() + "," + entry.getLongitude();
+                bundle.putString("location", locationString);
+                bundle.putString("latitude", String.valueOf(entry.getLatitude()));
+                bundle.putString("longitude", String.valueOf(entry.getLongitude()));
+
+
+                addActivityFragment.setArguments(bundle);
+                addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
                 break;
             // action with ID action_settings was selected
             case R.id.action_list_delete:
-                if(mLongPressedSelectedItem != null){
+                if (mLongPressedSelectedItem != null) {
                     try {
                         mDatabaseHelper.deleteActivityEntry(mLongPressedSelectedItem);
                         mActivityEntries.remove(mLongPressedSelectedItem);
@@ -152,64 +173,43 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
                         e.printStackTrace();
                     }
                 }
-
-
                 break;
             default:
                 break;
         }
-
-        return true;
+        return false;
     }
-
-    @Override
-    public void onItemClicked(RecyclerView recyclerView, int position, View v) {
-        ActivityEntry entry = mActivitiesAdapter.getLocation(position);
-
-        AddActivityFragment addActivityFragment = new AddActivityFragment();
-        addActivityFragment.setActivityUpdatedListener(this);
-        Bundle bundle = new Bundle();
-
-        bundle.putInt("id",entry.getId());
-        String locationString = entry.getLatitude() + "," + entry.getLongitude();
-        bundle.putString("location",locationString);
-        bundle.putString("latitude",String.valueOf(entry.getLatitude()));
-        bundle.putString("longitude",String.valueOf(entry.getLongitude()));
-
-
-        addActivityFragment.setArguments(bundle);
-        addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
-    }
-
-
-
-    @Override
-    public void onClick(View v) {
-        int id = v.getId();
-
-        switch (id) {
-
-            //case R.id.new_unit_button:
-
-            //  break;
-        }
-    }
-
-    @Override
-    public void notifyNewActivityAdded() {
-
-    }
-
-    @Override
-    public void notifyActivityUpdated() {
-        mActivityEntries = mDatabaseHelper.getActivityEntries();
-        mActivitiesAdapter.setContent(mActivityEntries);
-    }
-
 
     @Override
     public boolean onItemLongClicked(RecyclerView recyclerView, int position, View v) {
         mLongPressedSelectedItem = mActivitiesAdapter.getLocation(position);
+        //showMenu();
         return false;
+    }
+
+    @OnClick(R.id.closeActivitiesListButton)
+    public void closeActivityButtonClicked(ImageView imageView) {
+        this.dismiss();
+    }
+
+
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
+    }
+
+    // Get called when an event is added up updated.
+    //Refresh adapter data
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(NewActivityEntryEvent event){
+        mActivityEntries = mDatabaseHelper.getActivityEntries();
+        mActivitiesAdapter.setContent(mActivityEntries);
+    }
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    public void onEvent(UpdatedActivityEntryEvent event){
+        mActivityEntries = mDatabaseHelper.getActivityEntries();
+        mActivitiesAdapter.setContent(mActivityEntries);
     }
 }
