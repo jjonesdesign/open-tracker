@@ -52,6 +52,11 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
     ActivityEntry mLongPressedSelectedItem;
 
+    public static String CORDS_LOCATION = "location";
+    public static String CORDS_LATITUDE = "latitude";
+    public static String CORDS_LONGITUDE = "longitude";
+    public static String CORDS_ID = "id";
+
     public static ListActivitiesFragment getInstance() {
         return new ListActivitiesFragment();
     }
@@ -119,11 +124,11 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         AddActivityFragment addActivityFragment = new AddActivityFragment();
         Bundle bundle = new Bundle();
 
-        bundle.putInt("id", entry.getId());
+        bundle.putInt(CORDS_ID, entry.getId());
         String locationString = entry.getLatitude() + "," + entry.getLongitude();
-        bundle.putString("location", locationString);
-        bundle.putString("latitude", String.valueOf(entry.getLatitude()));
-        bundle.putString("longitude", String.valueOf(entry.getLongitude()));
+        bundle.putString(CORDS_LOCATION, locationString);
+        bundle.putString(CORDS_LATITUDE, String.valueOf(entry.getLatitude()));
+        bundle.putString(CORDS_LOCATION, String.valueOf(entry.getLongitude()));
 
 
         addActivityFragment.setArguments(bundle);
@@ -136,7 +141,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         MenuInflater inflater = getActivity().getMenuInflater();
         inflater.inflate(R.menu.list_options, menu);
 
-
+        //TODO:: Find better way to set for all.
         menu.getItem(0).setOnMenuItemClickListener(this);
         menu.getItem(1).setOnMenuItemClickListener(this);
     }
@@ -151,11 +156,11 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
                 AddActivityFragment addActivityFragment = new AddActivityFragment();
                 Bundle bundle = new Bundle();
 
-                bundle.putInt("id", entry.getId());
+                bundle.putInt(CORDS_ID, entry.getId());
                 String locationString = entry.getLatitude() + "," + entry.getLongitude();
-                bundle.putString("location", locationString);
-                bundle.putString("latitude", String.valueOf(entry.getLatitude()));
-                bundle.putString("longitude", String.valueOf(entry.getLongitude()));
+                bundle.putString(CORDS_LOCATION, locationString);
+                bundle.putString(CORDS_LATITUDE, String.valueOf(entry.getLatitude()));
+                bundle.putString(CORDS_LONGITUDE, String.valueOf(entry.getLongitude()));
 
 
                 addActivityFragment.setArguments(bundle);
@@ -168,7 +173,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
                         mDatabaseHelper.deleteActivityEntry(mLongPressedSelectedItem);
                         mActivityEntries.remove(mLongPressedSelectedItem);
                         mActivitiesAdapter.setContent(mActivityEntries);
-                        Toast.makeText(getContext(), "Item Deleted", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(getContext(), getString(R.string.toast_item_deleted), Toast.LENGTH_SHORT).show();
                     } catch (Exception e) {
                         e.printStackTrace();
                     }

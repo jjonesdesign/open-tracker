@@ -13,9 +13,11 @@ import retrofit2.http.Query;
  */
 
 public interface GoogleCityNameService {
+    String URL_GET_LOCATION = "maps/api/geocode/json";
+    String FIELD_LAT_LONG = "latlng";
 
     //http://maps.googleapis.com/maps/api/geocode/json?latlng=45.48160743,-122.55518623
-    @GET("maps/api/geocode/json")
-    Call<GetGoogleLocationNameResponse> getCityName(@Query("latlng") String location);
+    @GET(URL_GET_LOCATION)
+    Call<GetGoogleLocationNameResponse> getCityName(@Query(FIELD_LAT_LONG) String location);
 
 }

@@ -170,12 +170,12 @@ public class AddActivityFragment extends DialogFragment {
     }
 
     @OnClick(R.id.closeAddActivityButton)
-    public void closeDialogButtonClicked(ImageView imageView) {
+    public void closeDialogButtonClicked() {
         this.dismiss();
     }
 
     @OnClick(R.id.createActivityButton)
-    public void addActivityButtonClicked(ImageView imageView) {
+    public void addActivityButtonClicked() {
 
         if(mId > 0){
             mEntry.setName(mActivityNameInput.getText().toString());
@@ -186,7 +186,7 @@ public class AddActivityFragment extends DialogFragment {
 
             EventBus.getDefault().post(new UpdatedActivityEntryEvent());
 
-            Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Activity Updated", Toast.LENGTH_SHORT).show();
         }else {
 
             ActivityEntry newActivityEntry = new ActivityEntry();
@@ -201,7 +201,7 @@ public class AddActivityFragment extends DialogFragment {
 
             EventBus.getDefault().post(new NewActivityEntryEvent());
 
-            Toast.makeText(getContext(), "createActivityEntry Result: " + results, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), "Activity Created", Toast.LENGTH_SHORT).show();
         }
 
 
