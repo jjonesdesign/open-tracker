@@ -193,13 +193,6 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     }
 
 
-
-    @Override
-    public void onDestroy() {
-        EventBus.getDefault().unregister(this);
-        super.onDestroy();
-    }
-
     // Get called when an event is added up updated.
     //Refresh adapter data
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -211,5 +204,11 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     public void onEvent(UpdatedActivityEntryEvent event){
         mActivityEntries = mDatabaseHelper.getActivityEntries();
         mActivitiesAdapter.setContent(mActivityEntries);
+    }
+
+    @Override
+    public void onDestroy() {
+        EventBus.getDefault().unregister(this);
+        super.onDestroy();
     }
 }

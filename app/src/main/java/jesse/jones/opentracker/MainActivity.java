@@ -79,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     LatLng mPreviousLocation;
     LatLng mCurrentLocationSelection;
     List<Result> mLocationResultsArray = new ArrayList<Result>();
-    ;
+
     LocationManager mLocationManager;
 
     DatabaseHelper mDatabaseHelper;
@@ -119,7 +119,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mActivityLocations = new ArrayList<ActivityEntry>();
         mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
 
-        // Here, thisActivity is the current activity
+        // Ask for permissions to check location
         if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -127,15 +127,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             // Should we show an explanation?
             if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
-
-                // Show an explanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
             } else {
-
-                // No explanation needed, we can request the permission.
-
                 ActivityCompat.requestPermissions(MainActivity.this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                         MY_PERMISSION_FINE_LOCATION);
@@ -151,7 +143,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
-
+    
+    //==================== Menu ======================
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -168,7 +161,34 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         return true;
     }
 
-    //====================== Map & Data Providers ======================
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            // action with ID action_refresh was selected
+            case R.id.action_goto_activities:
+                ListActivitiesFragment listActivitiesFragment = new ListActivitiesFragment();
+                Bundle bundle = new Bundle();
+                listActivitiesFragment.setArguments(bundle);
+                listActivitiesFragment.show(getSupportFragmentManager(), listActivitiesFragment.getClass().getSimpleName());
+                break;
+            // action with ID action_settings was selected
+            case R.id.action_settings:
+                Toast.makeText(this, "Settings selected", Toast.LENGTH_SHORT)
+                        .show();
+                break;
+            default:
+                break;
+        }
+
+        return true;
+    }
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        return false;
+    }
+
+
+    //==================== Map ======================
     @Override
     public void onMapReady(GoogleMap map) {
         mMap = map;
@@ -274,6 +294,106 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    @Override
+    public void onMapClick(LatLng latLng) {
+
+        Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
+
+        mMap.clear();
+
+        mCurrentLocationSelection = latLng;
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(mCurrentLocationSelection));
+
+        rebuildMap();
+    }
+
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        mCurrentLocationSelection = marker.getPosition();
+        rebuildMap();
+        marker.showInfoWindow();
+    }
+
+    @Override
+    public boolean onMyLocationButtonClick() {
+        isGpsOn();
+
+        if (!mGpsEnabled) {
+            if (mLocation != null) {
+                //Temporarly removing as it seems to cause user flow problems
+                //mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
+                //mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
+            }
+            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
+            return false;
+        }
+
+        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
+
+        try {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
+
+        } catch (SecurityException e) {
+            e.printStackTrace();
+        }
+
+        mCurrentLocationSelection = mLocation;
+        rebuildMap();
+
+        return false;
+    }
+
+    //==================== Search ======================
+    @Override
+    public boolean onQueryTextSubmit(String query) {
+        if (!isGpsOn() && mLocation == null) {
+            Toast.makeText(getBaseContext(), "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
+            return true;
+        }
+        if (query.length() <= 0) {
+            Toast.makeText(getBaseContext(), "No search input has been added yet.", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(true);
+        mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
+
+
+        String currentLocation = mLocation.latitude + "," + mLocation.longitude;
+        String searchText = query;
+
+        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
+
+        foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
+            @Override
+            public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
+                Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
+
+                mLocationResultsArray.addAll(response.body().getResults());
+                rebuildMap();
+            }
+
+            @Override
+            public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
+                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        });
+        return false;
+    }
+
+    @Override
+    public boolean onQueryTextChange(String newText) {
+        return false;
+    }
+
+    @Override
+    public boolean onClose() {
+        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(false);
+        mLocationResultsArray.clear();
+        rebuildMap();
+        return false;
+    }
+
+    //====================== Data ======================
 
     @Override
     public void onProviderDisabled(String provider) {
@@ -327,123 +447,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
-    //====================== Click Handlers ======================
-    @OnClick(R.id.addActivityButton)
-    public void addActivityButtonClicked(FloatingActionButton button) {
-        if (mLocation == null) {
-            Toast.makeText(MainActivity.this, "No Location Set, Add One Manually", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        AddActivityFragment addActivityFragment = new AddActivityFragment();
-        Bundle bundle = new Bundle();
-
-        LatLng location;
-
-        if (mCurrentLocationSelection != null) {
-            location = mCurrentLocationSelection;
-        } else {
-            location = mLocation;
-        }
-
-        String locationString = location.latitude + "," + location.longitude;
-        bundle.putString("location", locationString);
-        bundle.putString("latitude", String.valueOf(location.latitude));
-        bundle.putString("longitude", String.valueOf(location.longitude));
-        addActivityFragment.setArguments(bundle);
-        addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
-    }
-
-    @Override
-    public void onMapClick(LatLng latLng) {
-
-        Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
-
-        mMap.clear();
-
-        mCurrentLocationSelection = latLng;
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(mCurrentLocationSelection));
-
-        rebuildMap();
-    }
-
-    @Override
-    public boolean onMyLocationButtonClick() {
-        isGpsOn();
-
-        if (!mGpsEnabled) {
-            if (mLocation != null) {
-                //Temporarly removing as it seems to cause user flow problems
-                //mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
-                //mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
-            }
-            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
-            return false;
-        }
-
-        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
-
-        try {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
-
-        } catch (SecurityException e) {
-            e.printStackTrace();
-        }
-
-        mCurrentLocationSelection = mLocation;
-        rebuildMap();
-
-        return false;
-    }
-
-    @Override
-    public void onInfoWindowClick(Marker marker) {
-        mCurrentLocationSelection = marker.getPosition();
-        rebuildMap();
-        marker.showInfoWindow();
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            // action with ID action_refresh was selected
-            case R.id.action_goto_activities:
-                ListActivitiesFragment listActivitiesFragment = new ListActivitiesFragment();
-                Bundle bundle = new Bundle();
-                listActivitiesFragment.setArguments(bundle);
-                listActivitiesFragment.show(getSupportFragmentManager(), listActivitiesFragment.getClass().getSimpleName());
-                break;
-            // action with ID action_settings was selected
-            case R.id.action_settings:
-                Toast.makeText(this, "Settings selected", Toast.LENGTH_SHORT)
-                        .show();
-                break;
-            default:
-                break;
-        }
-
-        return true;
-    }
-
-
-    //====================== Fragments ======================
-    public void replaceFragment(Fragment fragment, String descriptor) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.replace(mContentViewArea.getId(), fragment, descriptor);
-        ft.addToBackStack(null);
-        ft.commit();
-    }
-
-    public void addFragment(Fragment fragment, String descriptor) {
-        FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.add(mContentViewArea.getId(), fragment, descriptor);
-        ft.addToBackStack(null);
-        ft.commit();
-    }
-
-
     // Get called when an event is added up updated.
     //Refresh adapter data
     @Subscribe(threadMode = ThreadMode.MAIN)
@@ -457,55 +460,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mActivityLocations.clear();
         mActivityLocations.addAll(mDatabaseHelper.getActivityEntries());
         rebuildMap();
-    }
-
-    @Override
-    public boolean onQueryTextSubmit(String query) {
-        if (!isGpsOn() && mLocation == null) {
-            Toast.makeText(getBaseContext(), "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
-            return true;
-        }
-        if (query.length() <= 0) {
-            Toast.makeText(getBaseContext(), "No search input has been added yet.", Toast.LENGTH_SHORT).show();
-            return true;
-        }
-        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(true);
-        mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
-
-
-        String currentLocation = mLocation.latitude + "," + mLocation.longitude;
-        String searchText = query;
-
-        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
-
-        foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
-            @Override
-            public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
-                Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
-
-                mLocationResultsArray.addAll(response.body().getResults());
-                rebuildMap();
-            }
-
-            @Override
-            public void onFailure(Call<GetGooglePlacesResponse> call, Throwable t) {
-                Toast.makeText(MainActivity.this, t.getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
-        return false;
-    }
-
-    @Override
-    public boolean onQueryTextChange(String newText) {
-        return false;
-    }
-
-    @Override
-    public boolean onClose() {
-        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(false);
-        mLocationResultsArray.clear();
-        rebuildMap();
-        return false;
     }
 
     @Override
@@ -538,13 +492,48 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    @Override
-    public boolean onContextItemSelected(MenuItem item) {
-        return false;
+    //====================== Fragments ======================
+    public void replaceFragment(Fragment fragment, String descriptor) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.replace(mContentViewArea.getId(), fragment, descriptor);
+        ft.addToBackStack(null);
+        ft.commit();
     }
 
+    public void addFragment(Fragment fragment, String descriptor) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.add(mContentViewArea.getId(), fragment, descriptor);
+        ft.addToBackStack(null);
+        ft.commit();
+    }
 
+    //====================== Click Handlers ======================
+    @OnClick(R.id.addActivityButton)
+    public void addActivityButtonClicked(FloatingActionButton button) {
+        if (mLocation == null) {
+            Toast.makeText(MainActivity.this, "No Location Set, Add One Manually", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
+        AddActivityFragment addActivityFragment = new AddActivityFragment();
+        Bundle bundle = new Bundle();
 
+        LatLng location;
+
+        if (mCurrentLocationSelection != null) {
+            location = mCurrentLocationSelection;
+        } else {
+            location = mLocation;
+        }
+
+        String locationString = location.latitude + "," + location.longitude;
+        bundle.putString("location", locationString);
+        bundle.putString("latitude", String.valueOf(location.latitude));
+        bundle.putString("longitude", String.valueOf(location.longitude));
+        addActivityFragment.setArguments(bundle);
+        addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
+    }
 
 }
