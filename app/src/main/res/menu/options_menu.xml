@@ -11,11 +11,6 @@
         android:orderInCategory="200"
         android:title="@string/menu_option_activities"/>
     <item
-        android:id="@+id/action_settings"
-        android:orderInCategory="300"
-        android:title="@string/menu_option_settings">
-    </item>
-    <item
         android:id="@+id/menu_search"
         android:title="Search"
         appcompat:actionViewClass="android.support.v7.widget.SearchView"

@@ -22,5 +22,15 @@
     <string name="map_location_name">Location Name</string>
     <string name="map_location_description">Location Description</string>
     <string name="map_location_click_to_set_location">Click To Set As Location</string>
+    <string name="map_current_selected_location">Currently Selected Location</string>
+
+    <string name="toast_no_location_set">No Location Set, Add One Manually</string>
+    <string name="toast_location_updated">Location Updated</string>
+    <string name="toast_location_set_manually">Location Set Manually</string>
+    <string name="toast_updating_location">Updating Location</string>
+    <string name="toast_nothing_to_search">Nothing to search :(</string>
+    <string name="toast_gps_not_on">No Location Set. Turn on GPS or click on the map.</string>
+    <string name="toast_gps_must_be_enabled">GPS Must Be Enabled To Update Location.</string>
+    <string name="toast_item_deleted">Item Deleted</string>
 
 </resources>

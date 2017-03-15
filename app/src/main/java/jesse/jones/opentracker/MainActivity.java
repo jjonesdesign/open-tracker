@@ -71,7 +71,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     GoogleMap mMap;
-    GetGooglePlacesResponse mNewGoog;
     Retrofit mRetrofit;
     GooglePlacesService mPlacesService;
 
@@ -93,6 +92,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     public static final int MY_PERMISSION_FINE_LOCATION = 1;
 
+    public static String CORDS_LOCATION = "location";
+    public static String CORDS_LATITUDE = "latitude";
+    public static String CORDS_LONGITUDE = "longitude";
+
+    public static String GOOGLE_API = "https://maps.googleapis.com/";
+    public static String GOOGLE_RADIUS = "10000";
+    public static String GOOGLE_KEY = "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw";
+
     Menu mOptionsMenu;
 
 
@@ -109,7 +116,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
 
         mRetrofit = new Retrofit.Builder()
-                .baseUrl("https://maps.googleapis.com/")
+                .baseUrl(GOOGLE_API)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
 
@@ -143,7 +150,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
-    
+
     //==================== Menu ======================
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -171,11 +178,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 listActivitiesFragment.setArguments(bundle);
                 listActivitiesFragment.show(getSupportFragmentManager(), listActivitiesFragment.getClass().getSimpleName());
                 break;
-            // action with ID action_settings was selected
-            case R.id.action_settings:
-                Toast.makeText(this, "Settings selected", Toast.LENGTH_SHORT)
-                        .show();
-                break;
             default:
                 break;
         }
@@ -200,7 +202,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         } catch (SecurityException e) {
             e.printStackTrace();
         }
-
 
         if (lastLocation != null) {
             LatLng lastLatLng = new LatLng(lastLocation.getLatitude(), lastLocation.getLongitude());
@@ -284,7 +285,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         if (mCurrentLocationSelection != null) {
             MarkerOptions aNewMarker = new MarkerOptions();
-            aNewMarker.title("Currently Selected Location");
+            aNewMarker.title(getString(R.string.map_current_selected_location));
             aNewMarker.position(new LatLng(new Double(mCurrentLocationSelection.latitude), new Double(mCurrentLocationSelection.longitude)));
 
             aNewMarker.icon(BitmapDescriptorFactory.fromResource(R.mipmap.selectedlocation));
@@ -297,7 +298,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapClick(LatLng latLng) {
 
-        Toast.makeText(MainActivity.this, "Location Set Manually", Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, getString(R.string.toast_location_set_manually), Toast.LENGTH_SHORT).show();
 
         mMap.clear();
 
@@ -324,11 +325,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 //mMap.moveCamera(CameraUpdateFactory.zoomTo(15));
                 //mMap.moveCamera(CameraUpdateFactory.newLatLng(mLocation));
             }
-            Toast.makeText(MainActivity.this, "GPS Must Be Enabled To Update Location.", Toast.LENGTH_LONG).show();
+            Toast.makeText(MainActivity.this, getString(R.string.toast_gps_must_be_enabled), Toast.LENGTH_LONG).show();
             return false;
         }
 
-        Toast.makeText(MainActivity.this, "Updating Location", Toast.LENGTH_SHORT).show();
+        Toast.makeText(MainActivity.this, getString(R.string.toast_updating_location), Toast.LENGTH_SHORT).show();
 
         try {
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
@@ -347,11 +348,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public boolean onQueryTextSubmit(String query) {
         if (!isGpsOn() && mLocation == null) {
-            Toast.makeText(getBaseContext(), "No Location Set. Turn on GPS or click on the map.", Toast.LENGTH_LONG).show();
+            Toast.makeText(getBaseContext(), getString(R.string.toast_gps_not_on), Toast.LENGTH_LONG).show();
             return true;
         }
         if (query.length() <= 0) {
-            Toast.makeText(getBaseContext(), "No search input has been added yet.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getBaseContext(), getString(R.string.toast_nothing_to_search), Toast.LENGTH_SHORT).show();
             return true;
         }
         mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(true);
@@ -361,12 +362,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String currentLocation = mLocation.latitude + "," + mLocation.longitude;
         String searchText = query;
 
-        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, "10000", "", searchText, "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw");
+        Call<GetGooglePlacesResponse> foundPlaces = mPlacesService.getPlaces(currentLocation, GOOGLE_RADIUS, "", searchText, GOOGLE_KEY);
 
         foundPlaces.enqueue(new Callback<GetGooglePlacesResponse>() {
             @Override
             public void onResponse(Call<GetGooglePlacesResponse> call, Response<GetGooglePlacesResponse> response) {
-                Toast.makeText(MainActivity.this, "FOUND: " + response.body().getResults().size(), Toast.LENGTH_SHORT).show();
 
                 mLocationResultsArray.addAll(response.body().getResults());
                 rebuildMap();
@@ -412,7 +412,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (mCurrentLocationSelection == null && mLocation != null) {
             mCurrentLocationSelection = mLocation;
         }
-        Toast.makeText(MainActivity.this, "Location Updated", Toast.LENGTH_LONG).show();
+        Toast.makeText(MainActivity.this, getString(R.string.toast_location_updated), Toast.LENGTH_LONG).show();
 
         if (mMapReady) {
             mPreviousLocation = mLocation;
@@ -495,25 +495,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     //====================== Fragments ======================
     public void replaceFragment(Fragment fragment, String descriptor) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.replace(mContentViewArea.getId(), fragment, descriptor);
-        ft.addToBackStack(null);
-        ft.commit();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(mContentViewArea.getId(), fragment, descriptor);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 
     public void addFragment(Fragment fragment, String descriptor) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.add(mContentViewArea.getId(), fragment, descriptor);
-        ft.addToBackStack(null);
-        ft.commit();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(mContentViewArea.getId(), fragment, descriptor);
+        fragmentTransaction.addToBackStack(null);
+        fragmentTransaction.commit();
     }
 
     //====================== Click Handlers ======================
     @OnClick(R.id.addActivityButton)
     public void addActivityButtonClicked(FloatingActionButton button) {
         if (mLocation == null) {
-            Toast.makeText(MainActivity.this, "No Location Set, Add One Manually", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, getString(R.string.toast_no_location_set), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -528,10 +528,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             location = mLocation;
         }
 
+
         String locationString = location.latitude + "," + location.longitude;
-        bundle.putString("location", locationString);
-        bundle.putString("latitude", String.valueOf(location.latitude));
-        bundle.putString("longitude", String.valueOf(location.longitude));
+        bundle.putString(CORDS_LOCATION, locationString);
+        bundle.putString(CORDS_LATITUDE, String.valueOf(location.latitude));
+        bundle.putString(CORDS_LONGITUDE, String.valueOf(location.longitude));
         addActivityFragment.setArguments(bundle);
         addActivityFragment.show(getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
     }
