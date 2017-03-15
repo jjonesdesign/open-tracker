@@ -355,7 +355,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Toast.makeText(getBaseContext(), getString(R.string.toast_nothing_to_search), Toast.LENGTH_SHORT).show();
             return true;
         }
-        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(true);
+        //mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(true);
         mMap.moveCamera(CameraUpdateFactory.zoomTo(11));
 
 
@@ -387,7 +387,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onClose() {
-        mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(false);
+        //mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(false);
         mLocationResultsArray.clear();
         rebuildMap();
         return false;
