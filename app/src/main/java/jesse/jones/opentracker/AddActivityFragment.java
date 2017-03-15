@@ -85,10 +85,7 @@ public class AddActivityFragment extends DialogFragment {
     @NonNull
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
-        //Dialog dialog = super.onCreateDialog(savedInstanceState);
         Dialog dialog = new Dialog(getActivity(), android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
-        //dialog.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-
         return dialog;
     }
 
@@ -105,15 +102,12 @@ public class AddActivityFragment extends DialogFragment {
 
         Bundle arguments = getArguments();
 
-        if(arguments == null){
-
-        }else{
+        if(arguments != null){
             mId = getArguments().getInt(KEY_ID);
             mLocationCords = getArguments().getString(KEY_LOCATION);
             mLatitude = getArguments().getString(KEY_LATITUDE);
             mLongitude = getArguments().getString(KEY_LONGITUDE);
         }
-
 
         mDatabaseHelper = new DatabaseHelper(getContext());
 
@@ -125,14 +119,11 @@ public class AddActivityFragment extends DialogFragment {
             mActivityDesriptionInput.setText(mDescription);
 
         }
-
         return view;
     }
 
     @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-
-
 
         mGoogleCityNameService = mRetrofit.create(GoogleCityNameService.class);
 
@@ -151,11 +142,6 @@ public class AddActivityFragment extends DialogFragment {
 
                 }
 
-                //String zip = response.body().getResults().get(0).getAddressComponents().get(7).getLongName();
-                //String city = response.body().getResults().get(0).getAddressComponents().get(3).getLongName();
-                //String state = response.body().getResults().get(0).getAddressComponents().get(5).getShortName();
-                //String country = response.body().getResults().get(0).getAddressComponents().get(6).getShortName();
-                //mLocationNameDisplay.setText(city + " " + state + " " + zip + ", " + country);
                 mLocationNameDisplay.setText(formattedAddress);
 
             }
@@ -181,12 +167,11 @@ public class AddActivityFragment extends DialogFragment {
             mEntry.setName(mActivityNameInput.getText().toString());
             mEntry.setDescription(mActivityDesriptionInput.getText().toString());
 
-            long results = mDatabaseHelper.updateActivtyEntry(mEntry);
-
+            mDatabaseHelper.updateActivtyEntry(mEntry);
 
             EventBus.getDefault().post(new UpdatedActivityEntryEvent());
 
-            Toast.makeText(getContext(), "Activity Updated", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.toast_activity_updated), Toast.LENGTH_SHORT).show();
         }else {
 
             ActivityEntry newActivityEntry = new ActivityEntry();
@@ -196,20 +181,16 @@ public class AddActivityFragment extends DialogFragment {
             newActivityEntry.setLongitude(mLongitude);
             newActivityEntry.setStatus(1);
 
-            long results = mDatabaseHelper.createActivityEntry(newActivityEntry);
-
+            mDatabaseHelper.createActivityEntry(newActivityEntry);
 
             EventBus.getDefault().post(new NewActivityEntryEvent());
 
-            Toast.makeText(getContext(), "Activity Created", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.toast_activity_created), Toast.LENGTH_SHORT).show();
         }
-
 
         mActivityNameInput.setText("");
         mActivityDesriptionInput.setText("");
 
         this.dismiss();
     }
-
-
 }

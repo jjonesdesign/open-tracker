@@ -111,8 +111,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         EventBus.getDefault().register(this);
 
-        SupportMapFragment mapFragment =
-                (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
+        SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
         mRetrofit = new Retrofit.Builder()
@@ -231,7 +230,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Getting view from the layout file info_window_layout
                 View v = getLayoutInflater().inflate(R.layout.map_custom_info_window, null);
 
-
                 TextView locationName = (TextView) v.findViewById(R.id.locationNameText);
                 locationName.setText(marker.getTitle());
 
@@ -239,12 +237,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 locationDescription.setText(marker.getSnippet());
                 // Returning the view containing InfoWindow contents
                 return v;
-
             }
         });
 
         rebuildMap();
-
     }
 
     @Override
@@ -276,7 +272,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             aNewMarker.title(aActivityEntry.getName().toString());
             aNewMarker.position(new LatLng(new Double(aActivityEntry.getLatitude()), new Double(aActivityEntry.getLongitude())));
             aNewMarker.snippet(aActivityEntry.getDescription().toString());
-
 
             aNewMarker.icon(BitmapDescriptorFactory.fromResource(R.mipmap.arrows));
 
@@ -387,7 +382,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public boolean onClose() {
-        //mOptionsMenu.findItem(R.id.action_show_result_list).setVisible(false);
         mLocationResultsArray.clear();
         rebuildMap();
         return false;
@@ -397,17 +391,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onProviderDisabled(String provider) {
-        //Log.d("Latitude","disable");
+
     }
 
     @Override
     public void onProviderEnabled(String provider) {
-        //Log.d("Latitude","enable");
+
     }
 
     @Override
     public void onLocationChanged(android.location.Location location) {
-        //txtLat.setText("Latitude:" + location.getLatitude() + ", Longitude:" + location.getLongitude());
         mLocation = new LatLng(location.getLatitude(), location.getLongitude());
         if (mCurrentLocationSelection == null && mLocation != null) {
             mCurrentLocationSelection = mLocation;
@@ -424,7 +417,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
-        //Log.d("Latitude","status");
         isGpsOn();
     }
 
@@ -463,14 +455,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
         switch (requestCode) {
             case MY_PERMISSION_FINE_LOCATION: {
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     try {
                         mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
                         mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
@@ -481,14 +470,11 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 } else {
 
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    // permission denied.
                 }
                 return;
             }
 
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 

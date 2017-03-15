@@ -32,5 +32,7 @@
     <string name="toast_gps_not_on">No Location Set. Turn on GPS or click on the map.</string>
     <string name="toast_gps_must_be_enabled">GPS Must Be Enabled To Update Location.</string>
     <string name="toast_item_deleted">Item Deleted</string>
+    <string name="toast_activity_updated">Activity Updated</string>
+    <string name="toast_activity_created">Activity Created</string>
 
 </resources>

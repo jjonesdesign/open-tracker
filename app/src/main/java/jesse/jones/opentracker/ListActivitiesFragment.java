@@ -115,8 +115,6 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         setHasOptionsMenu(true);
     }
 
-
-
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
         ActivityEntry entry = mActivitiesAdapter.getLocation(position);
@@ -129,7 +127,6 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         bundle.putString(CORDS_LOCATION, locationString);
         bundle.putString(CORDS_LATITUDE, String.valueOf(entry.getLatitude()));
         bundle.putString(CORDS_LOCATION, String.valueOf(entry.getLongitude()));
-
 
         addActivityFragment.setArguments(bundle);
         addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
@@ -161,7 +158,6 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
                 bundle.putString(CORDS_LOCATION, locationString);
                 bundle.putString(CORDS_LATITUDE, String.valueOf(entry.getLatitude()));
                 bundle.putString(CORDS_LONGITUDE, String.valueOf(entry.getLongitude()));
-
 
                 addActivityFragment.setArguments(bundle);
                 addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());

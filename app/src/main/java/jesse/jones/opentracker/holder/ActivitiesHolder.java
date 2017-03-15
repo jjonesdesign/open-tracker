@@ -25,7 +25,6 @@ public class ActivitiesHolder extends RecyclerView.ViewHolder {
     }
     public void setDescripion(String descripion) { mDescription.setText(descripion); }
 
-
     public void clear() {
         mName.setText("");
         mDescription.setText("");
