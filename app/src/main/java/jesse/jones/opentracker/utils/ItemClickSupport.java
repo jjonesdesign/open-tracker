@@ -5,9 +5,6 @@ import android.view.View;
 
 import jesse.jones.opentracker.R;
 
-/**
- * Created by randy.thedford on 7/22/16.
- */
 public class ItemClickSupport {
     private final RecyclerView mRecyclerView;
     private OnItemClickListener mOnItemClickListener;
