@@ -25,7 +25,7 @@
         android:layout_below="@+id/activityName"
         android:layout_centerVertical="true"
         android:paddingLeft="16dp"
-        android:text="@string/display_activity_name"
+        android:text="@string/display_activity_description"
         android:textColor="#808080"
         android:textSize="14dp"/>
 

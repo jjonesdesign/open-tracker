@@ -14,8 +14,13 @@
 
     <string name="display_location_name">Location Name</string>
     <string name="display_activity_name">Activity Name</string>
-
+    <string name="display_activity_description">Activity Description</string>
 
     <string name="display_menu_edit">Edit</string>
     <string name="display_menu_delete">Delete</string>
+
+    <string name="map_location_name">Location Name</string>
+    <string name="map_location_description">Location Description</string>
+    <string name="map_location_click_to_set_location">Click To Set As Location</string>
+
 </resources>
