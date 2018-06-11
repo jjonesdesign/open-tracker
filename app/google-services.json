@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "316503872148",
+    "firebase_url": "https://open-tracker-85e7e.firebaseio.com",
+    "project_id": "open-tracker-85e7e",
+    "storage_bucket": "open-tracker-85e7e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:316503872148:android:0a25b34fdc4c650f",
+        "android_client_info": {
+          "package_name": "jesse.jones.opentracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "316503872148-usiemlha2218oh1s8po768dmina9rc7b.apps.googleusercontent.com",
+          "client_type": 3
+        },
+        {
+          "client_id": "316503872148-usiemlha2218oh1s8po768dmina9rc7b.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCU9DtrPB6kylh7tECxscRyh9SWukRO2w"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

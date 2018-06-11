@@ -1,4 +1,4 @@
-package jesse.jones.opentracker;
+package jesse.jones.opentracker.fragments;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -6,10 +6,8 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.PopupMenu;
 import android.support.v7.widget.RecyclerView;
 import android.view.ContextMenu;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -27,6 +25,7 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import jesse.jones.opentracker.R;
 import jesse.jones.opentracker.adapter.ActivitiesAdapter;
 import jesse.jones.opentracker.events.NewActivityEntryEvent;
 import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
@@ -73,7 +72,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.activities_list_fragment, container, false);
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.fragment_activities_list, container, false);
 
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);

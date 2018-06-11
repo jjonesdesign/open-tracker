@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -14,9 +15,8 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
-import android.view.ContextMenu;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -33,6 +33,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -44,14 +46,15 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
-import jesse.jones.opentracker.adapter.ActivitiesAdapter;
 import jesse.jones.opentracker.events.NewActivityEntryEvent;
 import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
+import jesse.jones.opentracker.fragments.AddActivityFragment;
+import jesse.jones.opentracker.fragments.ListActivitiesFragment;
+import jesse.jones.opentracker.fragments.LoginFragment;
 import jesse.jones.opentracker.network.GooglePlacesService;
 import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import jesse.jones.opentracker.network.entity.Result;
 import jesse.jones.opentracker.utils.DatabaseHelper;
-import jesse.jones.opentracker.utils.ItemClickSupport;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 import retrofit2.Call;
 import retrofit2.Callback;
@@ -59,9 +62,9 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-import static java.security.AccessController.getContext;
-
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, LocationListener, GoogleMap.OnMapClickListener, GoogleMap.OnMyLocationButtonClickListener, GoogleMap.OnMarkerClickListener, GoogleMap.OnInfoWindowClickListener, SearchView.OnQueryTextListener, SearchView.OnCloseListener {
+
+    private static final String TAG = "MainActivity";
 
     @BindView(R.id.mainViewFrameLayout)
     FrameLayout mContentViewArea;
@@ -101,6 +104,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public static String GOOGLE_KEY = "AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw";
 
     Menu mOptionsMenu;
+
+    private FirebaseAuth mAuth;
+    private FirebaseAuth.AuthStateListener mAuthListener;
 
 
     @Override
@@ -142,6 +148,22 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             mLocationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, this);
         }
+
+        mAuth = FirebaseAuth.getInstance();
+
+        mAuthListener = new FirebaseAuth.AuthStateListener() {
+            @Override
+            public void onAuthStateChanged(@NonNull FirebaseAuth firebaseAuth) {
+                FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user != null) {
+
+
+                } else {
+                    // User is signed out
+                    Log.d(TAG, "onAuthStateChanged:signed_out");
+                }
+            }
+        };
     }
 
     @Override
@@ -176,6 +198,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Bundle bundle = new Bundle();
                 listActivitiesFragment.setArguments(bundle);
                 listActivitiesFragment.show(getSupportFragmentManager(), listActivitiesFragment.getClass().getSimpleName());
+                break;
+            case R.id.acount_login:
+                LoginFragment loginFragment = new LoginFragment();
+                Bundle loginBundle = new Bundle();
+                loginFragment.setArguments(loginBundle);
+                loginFragment.show(getSupportFragmentManager(), loginFragment.getClass().getSimpleName());
+                break;
+
+            case R.id.acount_logout:
+
                 break;
             default:
                 break;

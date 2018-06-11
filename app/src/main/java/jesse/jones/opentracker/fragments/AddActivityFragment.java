@@ -1,4 +1,4 @@
-package jesse.jones.opentracker;
+package jesse.jones.opentracker.fragments;
 
 import android.app.Dialog;
 import android.os.Bundle;
@@ -20,6 +20,7 @@ import java.util.List;
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
+import jesse.jones.opentracker.R;
 import jesse.jones.opentracker.events.NewActivityEntryEvent;
 import jesse.jones.opentracker.events.UpdatedActivityEntryEvent;
 import jesse.jones.opentracker.network.GoogleCityNameService;
@@ -92,7 +93,7 @@ public class AddActivityFragment extends DialogFragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.add_activity_fragment, container, false);
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.fragment_add_activity, container, false);
         ButterKnife.bind(this, view);
 
         mRetrofit = new Retrofit.Builder()
