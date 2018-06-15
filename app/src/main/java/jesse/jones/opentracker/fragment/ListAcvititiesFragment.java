@@ -1,20 +1,15 @@
-package jesse.jones.opentracker.fragments;
+package jesse.jones.opentracker.fragment;
 
-import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
-import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.Toast;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -33,11 +28,7 @@ import jesse.jones.opentracker.utils.DatabaseHelper;
 import jesse.jones.opentracker.utils.ItemClickSupport;
 import jesse.jones.opentracker.utils.entity.local.ActivityEntry;
 
-/**
- * Created by admin on 2/27/17.
- */
-
-public class ListActivitiesFragment extends DialogFragment implements ItemClickSupport.OnItemClickListener, ItemClickSupport.OnItemLongClickListener, MenuItem.OnMenuItemClickListener {
+public class ListAcvititiesFragment extends BaseFragment implements ItemClickSupport.OnItemClickListener, ItemClickSupport.OnItemLongClickListener{
 
     @BindView(R.id.closeActivitiesListButton)
     ImageView mCloseActivitiesListButton;
@@ -56,28 +47,31 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
     public static String CORDS_LONGITUDE = "longitude";
     public static String CORDS_ID = "id";
 
-    public static ListActivitiesFragment getInstance() {
-        return new ListActivitiesFragment();
+    public ListAcvititiesFragment() {
     }
 
+    public static ListAcvititiesFragment newInstance(Bundle bundle) {
+        ListAcvititiesFragment fragment = new ListAcvititiesFragment();
 
-    @NonNull
+        return fragment;
+    }
+
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Dialog dialog = new Dialog(getActivity(), android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
-
-        return dialog;
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.fragment_activities_list, container, false);
+        View view = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_activities_list, container, false);
+        ButterKnife.bind(this, view);
+        EventBus.getDefault().register(this);
 
         mRecyclerView = (RecyclerView) view.findViewById(R.id.list);
         mLayoutManager = new LinearLayoutManager(getContext(), LinearLayoutManager.VERTICAL, false);
         mRecyclerView.setLayoutManager(mLayoutManager);
-        ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(this);
+        ItemClickSupport.addTo(mRecyclerView).setOnItemClickListener(ListAcvititiesFragment.this);
 
         mActivitiesAdapter = new ActivitiesAdapter();
 
@@ -92,27 +86,39 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         mActivityEntries = mDatabaseHelper.getActivityEntries();
         mActivitiesAdapter.setContent(mActivityEntries);
 
-        EventBus.getDefault().register(this);
-
         return view;
     }
 
     @Override
-    public void onActivityCreated(Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
-    }
-
-    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
-        ButterKnife.bind(this, view);
         super.onViewCreated(view, savedInstanceState);
     }
 
     @Override
-    public void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setHasOptionsMenu(true);
+    public void onResume() {
+
+        super.onResume();
+
     }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+    }
+
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        EventBus.getDefault().unregister(this);
+
+    }
+
 
     @Override
     public void onItemClicked(RecyclerView recyclerView, int position, View v) {
@@ -128,56 +134,8 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         bundle.putString(CORDS_LOCATION, String.valueOf(entry.getLongitude()));
 
         addActivityFragment.setArguments(bundle);
-        addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
-    }
+        addFragment(addActivityFragment);
 
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        super.onCreateContextMenu(menu, v, menuInfo);
-        MenuInflater inflater = getActivity().getMenuInflater();
-        inflater.inflate(R.menu.list_options, menu);
-
-        //TODO:: Find better way to set for all.
-        menu.getItem(0).setOnMenuItemClickListener(this);
-        menu.getItem(1).setOnMenuItemClickListener(this);
-    }
-
-    @Override
-    public boolean onMenuItemClick(MenuItem item) {
-        switch (item.getItemId()) {
-            // action with ID action_refresh was selected
-            case R.id.action_list_edit:
-                ActivityEntry entry = mLongPressedSelectedItem;
-
-                AddActivityFragment addActivityFragment = new AddActivityFragment();
-                Bundle bundle = new Bundle();
-
-                bundle.putInt(CORDS_ID, entry.getId());
-                String locationString = entry.getLatitude() + "," + entry.getLongitude();
-                bundle.putString(CORDS_LOCATION, locationString);
-                bundle.putString(CORDS_LATITUDE, String.valueOf(entry.getLatitude()));
-                bundle.putString(CORDS_LONGITUDE, String.valueOf(entry.getLongitude()));
-
-                addActivityFragment.setArguments(bundle);
-                addActivityFragment.show(getActivity().getSupportFragmentManager(), addActivityFragment.getClass().getSimpleName());
-                break;
-            // action with ID action_settings was selected
-            case R.id.action_list_delete:
-                if (mLongPressedSelectedItem != null) {
-                    try {
-                        mDatabaseHelper.deleteActivityEntry(mLongPressedSelectedItem);
-                        mActivityEntries.remove(mLongPressedSelectedItem);
-                        mActivitiesAdapter.setContent(mActivityEntries);
-                        Toast.makeText(getContext(), getString(R.string.toast_item_deleted), Toast.LENGTH_SHORT).show();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                }
-                break;
-            default:
-                break;
-        }
-        return false;
     }
 
     @Override
@@ -189,7 +147,7 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
 
     @OnClick(R.id.closeActivitiesListButton)
     public void closeActivityButtonClicked(ImageView imageView) {
-        this.dismiss();
+        getActivity().onBackPressed();
     }
 
 
@@ -211,4 +169,5 @@ public class ListActivitiesFragment extends DialogFragment implements ItemClickS
         EventBus.getDefault().unregister(this);
         super.onDestroy();
     }
+
 }

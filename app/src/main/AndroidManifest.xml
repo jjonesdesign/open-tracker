@@ -14,8 +14,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
-            android:configChanges="orientation">
+        <activity android:name=".activity.MainActivity"
+            android:configChanges="orientation"
+            android:theme="@style/AppTheme.NoActionBar">>
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" android:windowSoftInputMode="stateHidden"/>
 
@@ -24,7 +25,7 @@
             </intent-filter>
             <meta-data
                 android:name="android.app.default_searchable"
-                android:value=".MainActivity" />
+                android:value=".activity.MainActivity" />
         </activity>
 
         <meta-data android:name="com.google.android.geo.API_KEY" android:value="AIzaSyDvU6snqFqVYlm3DA-06Khmbbst0UzhBkw"/>

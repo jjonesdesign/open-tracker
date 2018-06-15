@@ -1,9 +1,6 @@
 package jesse.jones.opentracker.network;
 
-import com.google.android.gms.maps.model.LatLng;
-
 import jesse.jones.opentracker.network.entity.GetGoogleLocationNameResponse;
-import jesse.jones.opentracker.network.entity.GetGooglePlacesResponse;
 import retrofit2.Call;
 import retrofit2.http.GET;
 import retrofit2.http.Query;

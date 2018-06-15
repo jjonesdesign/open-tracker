@@ -1,10 +1,9 @@
-package jesse.jones.opentracker.fragments;
+package jesse.jones.opentracker.fragment;
 
-import android.app.Dialog;
+import android.content.Context;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.DialogFragment;
+import android.support.design.widget.FloatingActionButton;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -34,21 +33,13 @@ import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.gson.GsonConverterFactory;
 
-/**
- * Created by admin on 2/26/17.
- */
+public class AddActivityFragment extends BaseFragment {
 
-public class AddActivityFragment extends DialogFragment {
-
+    @BindView(R.id.save_fab)
+    FloatingActionButton mSaveFab;
 
     @BindView(R.id.locationNameDisplay)
     TextView mLocationNameDisplay;
-
-    @BindView(R.id.closeAddActivityButton)
-    ImageView mCloseDialogButton;
-
-    @BindView(R.id.createActivityButton)
-    ImageView mCreateActivityButton;
 
     @BindView(R.id.activity_name_input)
     EditText mActivityNameInput;
@@ -78,22 +69,24 @@ public class AddActivityFragment extends DialogFragment {
 
     DatabaseHelper mDatabaseHelper;
 
-    public static AddActivityFragment getInstance() {
-
-        return new AddActivityFragment();
+    public AddActivityFragment() {
     }
 
-    @NonNull
+    public static AddActivityFragment newInstance(Bundle bundle) {
+        AddActivityFragment fragment = new AddActivityFragment();
+
+        return fragment;
+    }
+
     @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        Dialog dialog = new Dialog(getActivity(), android.R.style.Theme_DeviceDefault_Light_NoActionBar_Fullscreen);
-        return dialog;
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
     }
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.fragment_add_activity, container, false);
+        View view = LayoutInflater.from(getActivity()).inflate(R.layout.fragment_add_activity, container, false);
         ButterKnife.bind(this, view);
 
         mRetrofit = new Retrofit.Builder()
@@ -120,6 +113,7 @@ public class AddActivityFragment extends DialogFragment {
             mActivityDesriptionInput.setText(mDescription);
 
         }
+
         return view;
     }
 
@@ -134,16 +128,18 @@ public class AddActivityFragment extends DialogFragment {
             @Override
             public void onResponse(Call<GetGoogleLocationNameResponse> call, Response<GetGoogleLocationNameResponse> response) {
                 GetGoogleLocationNameResponse responseBody = response.body();
-                List<LocationNameResult> LocationNameResults = responseBody.getResults();
-                String formattedAddress = "";
+                if(response.body() != null){
+                    List<LocationNameResult> LocationNameResults = responseBody.getResults();
+                    String formattedAddress = "";
 
-                for(int i=0; i < LocationNameResults.size();i++){
-                    LocationNameResult locationNameResult = LocationNameResults.get(i);
-                    formattedAddress += locationNameResult.getFormattedAddress();
+                    for(int i=0; i < LocationNameResults.size();i++){
+                        LocationNameResult locationNameResult = LocationNameResults.get(i);
+                        formattedAddress += locationNameResult.getFormattedAddress();
 
+                    }
+
+                    mLocationNameDisplay.setText(formattedAddress);
                 }
-
-                mLocationNameDisplay.setText(formattedAddress);
 
             }
 
@@ -153,15 +149,34 @@ public class AddActivityFragment extends DialogFragment {
             }
         });
 
+
         super.onViewCreated(view, savedInstanceState);
     }
 
-    @OnClick(R.id.closeAddActivityButton)
-    public void closeDialogButtonClicked() {
-        this.dismiss();
+    @Override
+    public void onResume() {
+
+        super.onResume();
+
     }
 
-    @OnClick(R.id.createActivityButton)
+    @Override
+    public void onStop() {
+        super.onStop();
+    }
+
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+    }
+
+    @OnClick(R.id.save_fab)
     public void addActivityButtonClicked() {
 
         if(mId > 0){
@@ -192,6 +207,6 @@ public class AddActivityFragment extends DialogFragment {
         mActivityNameInput.setText("");
         mActivityDesriptionInput.setText("");
 
-        this.dismiss();
+        getActivity().onBackPressed();
     }
 }

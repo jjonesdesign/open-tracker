@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "316503872148-t0rnq8h1pupvuh1n4d58q59vlbrivor3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "jesse.jones.opentracker",
+            "certificate_hash": "b81d4a063b6678fa27924418ee795bb81c8cecc7"
+          }
+        },
+        {
           "client_id": "316503872148-usiemlha2218oh1s8po768dmina9rc7b.apps.googleusercontent.com",
           "client_type": 3
         },
@@ -33,8 +41,13 @@
           "status": 1
         },
         "appinvite_service": {
-          "status": 1,
-          "other_platform_oauth_client": []
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "316503872148-usiemlha2218oh1s8po768dmina9rc7b.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         },
         "ads_service": {
           "status": 2
